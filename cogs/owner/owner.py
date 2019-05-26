@@ -33,8 +33,8 @@ class owner(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @cog.command()
-    async def add(self,ctx,cog):
-        """Adds cog."""
+    async def load(self,ctx,cog):
+        """Loads a cog."""
         try:
             self.bot.load_extension("cogs.{0}.{0}".format(cog))
         except:
@@ -48,8 +48,11 @@ class owner(commands.Cog):
             await ctx.send("Cog {} loaded.".format(cog))
 
     @cog.command()
-    async def remove(self,ctx,cog):
-        """Removes cog."""
+    async def unload(self,ctx,cog):
+        """Unloads a cog."""
+        if cog == 'owner':
+            await ctx.send("Bruh, unloading owner would make you unable to load cogs, so that's a no.")
+            return
         try:
             self.bot.unload_extension("cogs.{0}.{0}".format(cog))
         except:
