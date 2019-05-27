@@ -4,25 +4,22 @@ import sys, traceback, logging
 import time
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
-default_prefix = "-"
-try:
-    open("settings/prefixes.txt","x")
-    open("settings/prefixes.txt","w").write("{}")
-    logging.info("prefixes.txt created.")
-except:
-    logging.info("prefixes.txt found.")
-try:
-    open("settings/cogs.txt","x")
-    open("settings/cogs.txt","w").write("[cogs.owner.owner],[cogs.custom.custom],[cogs.admin.admin]")
-    logging.info("cogs.txt created.")
-except:
-    logging.info("cogs.txt found.")
-
+default_prefix = '-'
+def checkSettings(filename,write):
+    try:
+        open("settings/{}.txt".format(filename),"x")
+        open("settings/{}.txt".format(filename),"w").write(write)
+        logging.info("{}.txt created.".format(filename))
+    except:
+        logging.info("{}.txt found.".format(filename))
+checkSettings('cogs',"['cogs.owner.owner','cogs.custom.custom','cogs.mod.mod']")
+checkSettings('prefixes','{}')
 def prefix(bot, message):
     with open("settings/prefixes.txt") as f:
         prefixes = eval(f.read())
         return prefixes.get(message.guild.id, default_prefix)
 bot = commands.Bot(command_prefix=prefix, description='Bruh.')
+bot.default_prefix = default_prefix
 bot.startTime = time.time()
 extensions = eval(open("settings/cogs.txt","r").read())
 

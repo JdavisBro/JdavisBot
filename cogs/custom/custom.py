@@ -13,72 +13,83 @@ except:
     logging.info("commands.txt found.")
 
 class custom(commands.Cog):
-    """custom cog!"""
+    """Cog to add custom commands for servers!"""
 
     def __init__(self, bot):
         self.bot = bot
 
     @commands.group(aliases=['cc','customcommand'])
     async def custom(self,ctx):
+        """Commands to add custom commands to each server."""
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
-    @custom.command(name='add')
-    async def ccadd(self,ctx,name,*,content):
-        if ctx.author.guild_permissions.manage_guild:
-            f = open("cogs/custom/commands.txt")
-            commands = eval(f.read())
-            if ctx.guild.id not in commands:
-                commands[ctx.guild.id] = '{}'
-                f = open("cogs/custom/commands.txt","w")
-                f.write(str(commands))
-            if name in self.bot.commands:
-                await ctx.send("There is already an actual command named that.")
-            if name in commands[ctx.guild.id]:
-                await ctx.send("Warning: There is already a command named {} in this server continuing would overwrite it.\nIf you want to continue say `yes`.".format(name))
-                def check(m):
-                    return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
-                try:
-                    msg = await self.bot.wait_for('message',check=check,timeout=15)
-                except asyncio.TimeoutError:
-                    await ctx.send("Timed Out. Not overwriting.")
-                    return
-                else:
-                    if msg.content == "yes":
-                        pass
-            commands[ctx.guild.id][name] = content
+    @custom.command(name='add',aliases = ['new','make','a'])
+    @commands.has_permissions(manage_guild=True)
+    async def cc_add(self,ctx,name,*,content):
+        """Adds a custom command for this server, requires manage server permissions.
+        You can use arguments to the context class if you do
+        {.messagearguments}. For example .guild.name .channel.id .author.display_name .
+        if you want to use more than one ctx argument you add a 0, e.g {0.message.id}
+        you can also add arguments that the user fills in with $A"""
+        f = open("cogs/custom/commands.txt")
+        commands = eval(f.read())
+        if ctx.guild.id not in commands:
+            commands[ctx.guild.id] = '{}'
             f = open("cogs/custom/commands.txt","w")
             f.write(str(commands))
             f.flush()
-            await ctx.send("Command {} added!".format(name))
-
-    @custom.command(name="del")
-    async def ccdel(self,ctx,name):
-        if ctx.author.guild_permissions.manage_guild:
-            f = open("cogs/custom/commands.txt")
-            commands = eval(f.read())
-            if ctx.guild.id not in commands:
-                commands[ctx.guild.id] = '{}'
-                f = open("cogs/custom/commands.txt","w")
-                f.write(str(commands))
-                f.flush()
-                await ctx.send("{} wasn't found.".format(name))
-                return
+        if name in self.bot.commands:
+            await ctx.send("There is already an actual command named that.")
+            return
+        if name in commands[ctx.guild.id]:
+            await ctx.send("Warning: There is already a command named '{}' in this server continuing would overwrite it.\nIf you want to continue say `yes`.".format(name))
+            def check(m):
+                return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
             try:
-                commands[ctx.guild.id].pop(name, None)
-            except KeyError:
-                await ctx.send("{} wasn't found.".format(name))
-            except:
-                raise
+                msg = await self.bot.wait_for('message',check=check,timeout=15)
+            except asyncio.TimeoutError:
+                await ctx.send("Timed Out. Not overwriting.")
+                return
             else:
-                f = open("cogs/custom/commands.txt","w")
-                f.write(str(commands))
-                f.flush()
-                await ctx.send("Command {} deleted!".format(name))
-            
+                if msg.content == "yes":
+                    await ctx.send("Overwriting.")
+        cmds = commands[ctx.guild.id]
+        cmds[name] = content
+        commands[ctx.guild.id] = cmds
+        f = open("cogs/custom/commands.txt","w")
+        f.write(str(commands))
+        f.flush()
+        await ctx.send("Command {} added!".format(name))
 
-    @custom.command()
-    async def list(self,ctx):
+    @custom.command(name="del", aliases = ['delete','remove','d'])
+    @commands.has_permissions(manage_guild=True)
+    async def cc_del(self,ctx,name):
+        """Deltes a custom command for this server, requires manage server permission."""
+        f = open("cogs/custom/commands.txt")
+        commands = eval(f.read())
+        if ctx.guild.id not in commands:
+            commands[ctx.guild.id] = '{}'
+            f = open("cogs/custom/commands.txt","w")
+            f.write(str(commands))
+            f.flush()
+            await ctx.send("{} wasn't found.".format(name))
+            return
+        try:
+            commands[ctx.guild.id].pop(name, None)
+        except KeyError:
+            await ctx.send("{} wasn't found.".format(name))
+        except:
+            raise
+        else:
+            f = open("cogs/custom/commands.txt","w")
+            f.write(str(commands))
+            f.flush()
+            await ctx.send("Command {} deleted!".format(name))
+        
+    @custom.command(name = 'list',aliases = ['get','view','l','ls'])
+    async def cc_list(self,ctx):
+        """Lists custom commands for this server."""
         f = open("cogs/custom/commands.txt")
         commands = eval(f.read())
         if ctx.guild.id not in commands:
@@ -91,7 +102,7 @@ class custom(commands.Cog):
             return
         text = 'Custom Commands for {}:'.format(ctx.guild.name)
         for key in commands[ctx.guild.id]:
-            text = '{}NEWLINE{}: {}'.format(text,str(key),str(commands[ctx.guild.id][key]))
+            text = '{}NEWLINE{}: {}'.format(text,str(key),commands[ctx.guild.id][key])
         for line in textwrap.wrap(text, 1994):
             line = line.replace('NEWLINE','\n')
             await ctx.send("``{}``".format(line))
@@ -101,12 +112,15 @@ class custom(commands.Cog):
     async def on_message(self, message):
         with open("settings/prefixes.txt") as f:
             prefixes = eval(f.read())
-            prefix = prefixes.get(message.guild.id, '-')
+            prefix = prefixes.get(message.guild.id, self.bot.default_prefix)
         if message.content.startswith(prefix):
             f = open("cogs/custom/commands.txt")
             commands = eval(f.read())
             if message.guild.id not in commands:
                 commands[message.guild.id] = '{}'
+                f = open("cogs/custom/commands.txt","w")
+                f.write("commands")
+                f.flush()
                 return
             cmds=commands[message.guild.id]
             text = message.content.replace(prefix,'')

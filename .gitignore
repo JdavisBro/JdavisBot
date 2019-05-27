@@ -1,5 +1,6 @@
 
 .vscode/launch.json
-cogs.txt
-prefixes.txt
+settings/cogs.txt
+settings/prefixes.txt
 cogs/custom/commands.txt
+settings/mod.txt

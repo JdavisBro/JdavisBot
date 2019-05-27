@@ -69,15 +69,14 @@ class owner(commands.Cog):
         try:
             self.bot.unload_extension("cogs.{0}.{0}".format(cog))
         except:
-            await ctx.send("Failed.")
-            raise
-        else:
-            extensions = eval(open("settings/cogs.txt","r").read())
-            extensions.remove("cogs.{0}.{0}".format(cog))
-            f=open("settings/cogs.txt","w")
-            f.write(str(extensions))
-            f.flush
-            await ctx.send("Cog {} removed.".format(cog))
+            await ctx.send("Cog not loaded but removing it.")
+            pass
+        extensions = eval(open("settings/cogs.txt","r").read())
+        extensions.remove("cogs.{0}.{0}".format(cog))
+        f=open("settings/cogs.txt","w")
+        f.write(str(extensions))
+        f.flush
+        await ctx.send("Cog {} removed.".format(cog))
 
     @cog.command(aliases = ['r'])
     async def reload(self,ctx,cog):
