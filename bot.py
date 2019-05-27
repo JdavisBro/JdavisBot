@@ -40,8 +40,9 @@ async def on_ready():
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        channel = ctx.channel
         return
+    await ctx.send("`{} occured while running {}`".format(error,ctx.command.name))
+    await ctx.send_help(ctx.command)
     raise error
 
 bot.run(sys.argv[1], bot=True, reconnect=True)
