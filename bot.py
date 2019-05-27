@@ -13,7 +13,7 @@ except:
     logging.info("prefixes.txt found.")
 try:
     open("settings/cogs.txt","x")
-    open("settings/cogs.txt","w").write("[cogs.owner.owner]")
+    open("settings/cogs.txt","w").write("[cogs.owner.owner],[cogs.custom.custom]")
     logging.info("cogs.txt created.")
 except:
     logging.info("cogs.txt found.")
