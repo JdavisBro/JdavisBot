@@ -2,3 +2,4 @@
 .vscode/launch.json
 cogs.txt
 prefixes.txt
+cogs/custom/commands.txt
