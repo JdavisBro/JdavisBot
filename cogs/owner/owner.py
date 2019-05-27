@@ -93,7 +93,7 @@ class owner(commands.Cog):
     async def info(self,ctx):
         colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
         appinfo = await self.bot.application_info()
-        embed = discord.Embed(colour=colour)
+        embed = discord.Embed(colour=colour,description="BruhBot is a bot made by JdavisBro#2640 and enahnced using cogs made by anyone!")
         embed.set_author(name="BruhBot", url="https://wwww.github.com/JdavisBro/bruhbot", icon_url=self.bot.user.avatar_url)
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name="Instance Owner:", value=appinfo.owner, inline=True)

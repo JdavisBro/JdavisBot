@@ -162,3 +162,25 @@ class mod(commands.Cog):
             await logchannel.send(embed=embed)
         except:
             pass
+
+    @commands.command()
+    async def roleinfo(self,ctx,*,role: discord.Role):
+        listsep = 'No'
+        mentionable = 'No'
+        if role.hoist:
+            listsep = 'Yes'
+        if role.mentionable:
+            mentionable = 'Yes'
+        if str(role.colour) == '#000000':
+            colour = '#000000 / NONE'
+        else:
+            colour = role.colour 
+        embed = discord.Embed(title=str(role),description="<@&{}>".format(role.id),colour=role.colour)
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.add_field(name="Role ID:", value=role.id,inline=True)
+        embed.add_field(name="Seperated in list:", value=listsep)
+        embed.add_field(name="Role Position", value=role.position,inline=True)
+        embed.add_field(name="Mentionable:", value=mentionable)
+        embed.add_field(name="Colour:", value=colour)
+        embed.add_field(name="Creation Time:", value=role.created_at,inline=True)
+        await ctx.send(embed=embed)
