@@ -13,4 +13,7 @@ class echo(commands.Cog):
     @commands.command()
     async def echo(self,ctx,*,echo):
         """Echos what you say"""
-        await ctx.send(echo.format(ctx))
+        try:
+            await ctx.send(echo.format(ctx))
+        except:
+            await ctx.send("There was an error.")
