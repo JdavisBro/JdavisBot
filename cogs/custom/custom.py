@@ -1,16 +1,16 @@
 import discord, asyncio, logging
 from discord.ext import commands
-import textwrap
+import textwrap, json
 
 def setup(bot):
     bot.add_cog(custom(bot))
 
 try:
-    open("cogs/custom/commands.txt","x")
-    open("cogs/custom/commands.txt","w").write("{}")
-    logging.info("commands.txt created.")
+    open("cogs/custom/commands.json","x")
+    open("cogs/custom/commands.json","w").write("{}")
+    logging.info("commands.json created.")
 except:
-    logging.info("commands.txt found.")
+    logging.info("commands.json found.")
 
 class custom(commands.Cog):
     """Cog to add custom commands for servers!"""
@@ -32,17 +32,16 @@ class custom(commands.Cog):
         {.messagearguments}. For example .guild.name .channel.id .author.display_name .
         if you want to use more than one ctx argument you add a 0, e.g {0.message.id}
         you can also add arguments that the user fills in with $A"""
-        f = open("cogs/custom/commands.txt")
-        commands = eval(f.read())
-        if ctx.guild.id not in commands:
-            commands[ctx.guild.id] = '{}'
-            f = open("cogs/custom/commands.txt","w")
-            f.write(str(commands))
-            f.flush()
+        with open("cogs/custom/commands.json", "r+") as f:
+            commandServerDict = json.load(f)
+        if ctx.guild.id not in commandServerDict:
+            commandServerDict[ctx.guild.id] = dict()
+            with open("cogs/custom/commands.json", "r+") as f:
+                json.dump(commandServerDict,f)
         if name in self.bot.commands:
             await ctx.send("There is already an actual command named that.")
             return
-        if name in commands[ctx.guild.id]:
+        if name in commandServerDict[ctx.guild.id]:
             await ctx.send("Warning: There is already a command named '{}' in this server continuing would overwrite it.\nIf you want to continue say `yes`.".format(name))
             def check(m):
                 return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
@@ -54,12 +53,9 @@ class custom(commands.Cog):
             else:
                 if msg.content == "yes":
                     await ctx.send("Overwriting.")
-        cmds = commands[ctx.guild.id]
-        cmds[name] = content
-        commands[ctx.guild.id] = cmds
-        f = open("cogs/custom/commands.txt","w")
-        f.write(str(commands))
-        f.flush()
+        commandServerDict[ctx.guild.id][name] = content
+        with open("cogs/custom/commands.json","r+") as f:
+            json.dump(commandServerDict,f)
         await ctx.send("Command {} added!".format(name))
 
     @custom.command(name="del", aliases = ['delete','remove','d'])

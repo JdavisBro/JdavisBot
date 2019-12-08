@@ -18,7 +18,7 @@ def prefix(bot, message):
     with open("settings/prefixes.txt") as f:
         prefixes = eval(f.read())
         return prefixes.get(message.guild.id, default_prefix)
-bot = commands.Bot(command_prefix=prefix, description='Bruh.')
+bot = commands.Bot(command_prefix=prefix, description='Bark Bark.')
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
 extensions = eval(open("settings/cogs.txt","r").read())
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 @bot.event
 async def on_ready():
     logging.info(f'Logged in as: {bot.user.name} - {bot.user.id}')
-    logging.info(f'Version: {discord.__version__}')
+    logging.info(f'Discord.py Version: {discord.__version__}')
 
 @bot.event
 async def on_command_error(ctx, error):
