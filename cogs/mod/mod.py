@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import random
+import random,json
 import logging
 
 def setup(bot):
@@ -34,7 +34,7 @@ class mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group()
+    @commands.group(name="mod")
     @commands.has_permissions(manage_guild=True)
     @commands.guild_only()
     async def modset(self,ctx):
@@ -57,6 +57,25 @@ class mod(commands.Cog):
         fw.flush()
         await ctx.send("{} has been made the log channel".format(channel.name))
         
+    @modset.command(name="prefix")
+    async def setprefix(self,ctx,prefix="-"):
+        guildid = str(ctx.guild.id)
+        with open("settings/prefixes.json","r+") as f:
+            prefixes = json.load(f)
+        if guildid not in prefixes:
+            with open("settings/prefixes.json","r+") as f:
+                prefixes[guildid] = self.bot.default_prefix
+                json.dump(prefixes,f)
+        if prefix == prefixes[guildid]:
+            await ctx.send("That's already the prefix!")
+            return
+        if len(prefix) > 14:
+            await ctx.send("That's too long! It must be under 15 characters.")
+            return
+        with open("settings/prefixes.json","w+") as f:
+            prefixes[guildid] = prefix
+            json.dump(prefixes,f)
+            await ctx.send(f"Prefix has been set to {prefix}!")
 
     @commands.group()
     @commands.has_permissions(manage_roles=True)
@@ -84,8 +103,8 @@ class mod(commands.Cog):
     @commands.guild_only()
     async def ban(self,ctx,user: discord.Member,days: str = None,*,reason: str = None):
         """Bans user and deletes days of messages.
-        If days (number) not stated but a word is there
-        it will be treated as the first word of reason"""
+        If days is a word it will be treated 
+        as the first word of the reason"""
         if ctx.author == user:
             await ctx.send("You can't ban yourself!")
             return

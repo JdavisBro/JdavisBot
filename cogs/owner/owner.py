@@ -38,7 +38,7 @@ class owner(commands.Cog):
     @cog.command(aliases = ['l'])
     async def load(self,ctx,cog):
         """Loads a cog."""
-        await ctx.send("Warning: If you installed this cog from online it could damage your BruhBot installation.\nIf you want to continue say `yes`.")
+        await ctx.send("Warning: Could be bad, uh oh.\nIf you want to continue say `yes`.")
         def check(m):
             return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
         try:
@@ -53,11 +53,11 @@ class owner(commands.Cog):
                     await ctx.send("Failed.")
                     raise
                 else:
-                    extensions = eval(open("settings/cogs.txt","r").read())
+                    with open("settings/cogs.json","r+") as f:
+                        extensions = json.load(f)
                     extensions.append("cogs.{0}.{0}".format(cog))
-                    f=open("settings/cogs.txt","w")
-                    f.write(str(extensions))
-                    f.flush
+                    with open("settings/cogs.json","w+") as f:
+                        json.dump(extensions,f)
                     await ctx.send("Cog {} loaded.".format(cog))
 
     @cog.command(aliases = ['u'])
@@ -71,12 +71,12 @@ class owner(commands.Cog):
         except:
             await ctx.send("Cog not loaded but removing it.")
             pass
-        extensions = eval(open("settings/cogs.txt","r").read())
+        with open("settings/cogs.json","r+") as f:
+            extensions = json.load(f)
         extensions.remove("cogs.{0}.{0}".format(cog))
-        f=open("settings/cogs.txt","w")
-        f.write(str(extensions))
-        f.flush
-        await ctx.send("Cog {} removed.".format(cog))
+        with open("settings/cogs.json","w+") as f:
+            json.dump(extensions,f)
+        await ctx.send("Cog {} unloaded.".format(cog))
 
     @cog.command(aliases = ['r'])
     async def reload(self,ctx,cog):
@@ -89,12 +89,32 @@ class owner(commands.Cog):
         else:
             await ctx.send("Cog {} reloaded.".format(cog))
 
+    @cog.command(aliases = ["otl"])
+    async def oneTimeLoad(self,ctx,cog):
+        """Loads cog for single time use"""
+        try:
+            self.bot.load_extension(f"cogs.{cog}.{cog}")
+        except:
+            await ctx.send("Unable to load that cog.")
+        else:
+            await ctx.send("Cog loaded!")
+
+    @cog.command(aliases = ["otul"])
+    async def oneTimeUnload(self,ctx,cog):
+        """Unloads cog for single time use"""
+        try:
+            self.bot.unload_extension(f"cogs.{cog}.{cog}")
+        except:
+            await ctx.send("Unable to unload that cog?")
+        else:
+            await ctx.send("Cog unloaded!")
+
     @commands.command()
     async def info(self,ctx):
         colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
         appinfo = await self.bot.application_info()
-        embed = discord.Embed(colour=colour,description="BruhBot is a bot made by JdavisBro#2640 and enahnced using cogs made by anyone!")
-        embed.set_author(name="BruhBot", url="https://wwww.github.com/JdavisBro/bruhbot", icon_url=self.bot.user.avatar_url)
+        embed = discord.Embed(colour=colour,description="Fox WOOF WOOF!")
+        embed.set_author(name="FoxBot", url="https://wwww.github.com/JdavisBro/FoxBot", icon_url=self.bot.user.avatar_url)
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name="Instance Owner:", value=appinfo.owner, inline=True)
         embed.add_field(name="Python Version:", value="[{}](https://www.python.org)".format(platform.python_version()), inline=True)

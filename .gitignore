@@ -1,7 +1,4 @@
 
-.vscode/launch.json
-settings/cogs.txt
-settings/prefixes.txt
-cogs/custom/commands.txt
 settings/mod.txt
 *.pyc
+*.json

@@ -1,27 +1,35 @@
 import discord
 from discord.ext import commands
 import sys, traceback, logging
-import time
+import time, os, json
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
 default_prefix = '-'
+if not os.path.isdir('settings'):
+    os.mkdir('settings')
+    logging.info("Settings folder created.")
 def checkSettings(filename,write):
     try:
-        open("settings/{}.txt".format(filename),"x")
-        open("settings/{}.txt".format(filename),"w").write(write)
-        logging.info("{}.txt created.".format(filename))
+        open(f"settings/{filename}.json","x")
+        json.dump(write,open(f"settings/{filename}.json","w"))
+        logging.info(f"{filename}.json created.")
     except:
-        logging.info("{}.txt found.".format(filename))
-checkSettings('cogs',"['cogs.owner.owner','cogs.custom.custom','cogs.mod.mod']")
-checkSettings('prefixes','{}')
+        logging.info(f"{filename}.json found.")
+
+checkSettings('cogs',["cogs.owner.owner","cogs.custom.custom","cogs.mod.mod"])
+checkSettings('prefixes',dict())
+
 def prefix(bot, message):
-    with open("settings/prefixes.txt") as f:
-        prefixes = eval(f.read())
-        return prefixes.get(message.guild.id, default_prefix)
+    with open("settings/prefixes.json","r+") as f:
+        prefixes = json.load(f)
+        return prefixes.get(str(message.guild.id), default_prefix)
+
 bot = commands.Bot(command_prefix=prefix, description='Bark Bark.')
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
-extensions = eval(open("settings/cogs.txt","r").read())
+
+with open("settings/cogs.json","r+") as f:
+    extensions = json.load(f)
 
 if __name__ == '__main__':
     for extension in extensions:
@@ -29,6 +37,7 @@ if __name__ == '__main__':
             bot.load_extension(extension)
         except:
             logging.warning("{} was unable to be loaded.".format(extension))
+            raise
         else:
             logging.info("{} loaded.".format(extension))
 
