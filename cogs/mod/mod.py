@@ -5,22 +5,24 @@ import logging
 
 def setup(bot):
     bot.add_cog(mod(bot))
+
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO) 
+
 try:
-    open("settings/mod.txt","x")
-    open("settings/mod.txt","w").write('{}')
-    logging.info("mod.txt created.")
+    open("settings/mod.json","x")
+    json.dump(dict(),open("settings/mod.json","w"))
+    logging.info("mod.json created.")
 except:
-    logging.info("mod.txt found.")
+    logging.info("mod.json found.")
 
 def getmodsetting(guildid,setting):
-    with open("settings/mod.txt") as f:
-        settings = eval(f.read())
+    guildid = str(guildid)
+    with open("settings/mod.json") as f:
+        settings = json.load(f)
         if guildid not in settings:
             settings[guildid] = {}
-            fw = open("settings/mod.txt","w")
-            fw.write(str(settings))
-            fw.flush()
+            with open("settings/mod.json","w") as f:
+                json.dump(settings,f)
         if setting not in settings[guildid]:
             setting = None
             return setting
@@ -42,20 +44,28 @@ class mod(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @modset.command()
-    async def logchannel(self,ctx,channel: discord.TextChannel):
-        setting = ''
-        getmodsetting(ctx.guild.id,'logchannel')
-        logchannel = self.bot.get_channel(setting)
+    async def logchannel(self,ctx,channel: discord.TextChannel=None):
+        guildid = str(ctx.guild.id)
+        setting = getmodsetting(guildid,'logchannel')
+        try:
+            logchannel = self.bot.get_channel(int(setting))
+        except:
+            logchannel = None
         if logchannel == channel:
             await ctx.send("The log channel is already that channel!")
+            return
         if not channel.permissions_for(ctx.guild.me).read_messages or not channel.permissions_for(ctx.guild.me).send_messages:
             await ctx.send("I can't read and/or send messages in that channel.")
-        settings = eval(open('settings/mod.txt').read())
-        settings[ctx.guild.id]['logchannel'] = channel.id
-        fw = open("settings/mod.txt","w")
-        fw.write(str(settings))
-        fw.flush()
-        await ctx.send("{} has been made the log channel".format(channel.name))
+            return
+        with open("settings/mod.json","r+") as f:
+            settings = json.load(f)
+        settings[guildid]['logchannel'] = channel.id
+        with open("settings/mod.json","w+") as f:
+            json.dump(settings,f)
+        if channel:
+            await ctx.send("{} has been made the log channel".format(channel.name))
+        else:
+            await ctx.send("The log channel has been removed")
         
     @modset.command(name="prefix")
     async def setprefix(self,ctx,prefix="-"):
@@ -85,15 +95,15 @@ class mod(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @role.command(name = 'add',no_pm=True)
-    async def role_add(self,ctx,role: discord.Role,user: discord.Member = ''):
-        if user == '':
+    async def role_add(self,ctx,role: discord.Role,user: discord.Member = None):
+        if not user:
             user = ctx.author
         await user.add_roles(role)
         await ctx.send("{} has been given the {} role.".format(user,role))
     
     @role.command(name = 'remove')
-    async def role_remove(self,ctx,role: discord.Role,user: discord.Member = ''):
-        if user == '':
+    async def role_remove(self,ctx,role: discord.Role,user: discord.Member = None):
+        if not user:
             user = ctx.author
         await user.remove_roles(role)
         await ctx.send("{} has been removed from the {} role".format(user,role))
@@ -125,11 +135,7 @@ class mod(commands.Cog):
         else:
             if days > 7 or days < 0:
                 await ctx.send("Days must be between 0 and 7")
-        logchannel = None
-        try:
-            logchannel = self.bot.get_channel(getmodsetting(ctx.guild.id,'logchannel'))
-        except:
-            pass
+        logchannel = self.bot.get_channel(getmodsetting(str(ctx.guild.id),'logchannel'))
         try:
             await ctx.guild.ban(user,reason=reason,delete_message_days=days)
             await ctx.send("Banned.")
@@ -162,11 +168,7 @@ class mod(commands.Cog):
         if usertoprole > authortoprole:
             await ctx.send("That user has a role higher than you so you can't kick them!")
             return
-        logchannel = None
-        try:
-            logchannel = self.bot.get_channel(getmodsetting(ctx.guild.id,'logchannel'))
-        except:
-            pass
+        logchannel = self.bot.get_channel(getmodsetting(ctx.guild.id,'logchannel'))
         try:
             await ctx.guild.kick(user,reason=reason)
             await ctx.send("Kicked.")
