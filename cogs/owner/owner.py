@@ -2,7 +2,7 @@ import discord, asyncio
 from discord.ext import commands
 import random
 import platform
-import time, datetime
+import time, datetime, json
 
 def setup(bot):
     bot.add_cog(owner(bot))
