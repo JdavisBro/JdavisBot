@@ -12,6 +12,7 @@ class owner(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.bot.previousReload = None
 
     @commands.command()
     @commands.is_owner()
@@ -79,8 +80,13 @@ class owner(commands.Cog):
         await ctx.send("Cog {} unloaded.".format(cog))
 
     @cog.command(aliases = ['r'])
-    async def reload(self,ctx,cog):
+    async def reload(self,ctx,cog=None):
         """Reload cog."""
+        if cog == None:
+            if self.bot.previousReload == None:
+                return
+            else:
+                cog = self.bot.previousReload
         try:
             self.bot.reload_extension("cogs.{0}.{0}".format(cog))
         except:
@@ -88,6 +94,7 @@ class owner(commands.Cog):
             raise
         else:
             await ctx.send("Cog {} reloaded.".format(cog))
+            exec(f"self.bot.previousReload = cog")
 
     @cog.command(aliases = ["otl"])
     async def oneTimeLoad(self,ctx,cog):
@@ -108,6 +115,11 @@ class owner(commands.Cog):
             await ctx.send("Unable to unload that cog?")
         else:
             await ctx.send("Cog unloaded!")
+
+    @commands.command(name="reload")
+    async def reload_alias(self,ctx,cog=None):
+        command = self.bot.get_command("cog reload")
+        await ctx.invoke(command,cog)
 
     @commands.command()
     async def info(self,ctx):

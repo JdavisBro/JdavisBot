@@ -54,4 +54,14 @@ async def on_command_error(ctx, error):
     await ctx.send_help(ctx.command)
     raise error
 
+@bot.command(name="oneTimeLoad",aliases = ["otl"])
+async def base_oneTimeLoad(ctx,cog):
+    """Loads cog for single time use"""
+    try:
+        self.bot.load_extension(f"cogs.{cog}.{cog}")
+    except:
+        await ctx.send("Unable to load that cog.")
+    else:
+        await ctx.send("Cog loaded!")
+
 bot.run(sys.argv[1], bot=True, reconnect=True)

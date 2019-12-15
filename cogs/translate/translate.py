@@ -46,8 +46,8 @@ class translate(commands.Cog):
             translated = translator.translate(translateThis,dest=destLanguage)
         embed = discord.Embed(title="Translation", colour=discord.Colour(0x188079))
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
-        embed.add_field(name=f"Original ({translated.src})", value=f"{translated.origin}", inline=True)
-        embed.add_field(name=f"Translated ({translated.dest})", value=f"{translated.text}", inline=True)
+        embed.add_field(name=f"Original ({googletrans.LANGUAGES[translated.src]})", value=f"{translated.origin}", inline=True)
+        embed.add_field(name=f"Translated ({googletrans.LANGUAGES[translated.dest]})", value=f"{translated.text}", inline=True)
         await ctx.send(translated.text,embed=embed)
 
     @commands.command()
