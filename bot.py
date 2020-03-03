@@ -24,7 +24,7 @@ def prefix(bot, message):
         prefixes = json.load(f)
         return prefixes.get(str(message.guild.id), default_prefix)
 
-bot = commands.Bot(command_prefix=prefix, description='Bark Bark.')
+bot = commands.Bot(command_prefix=prefix, description='Bark Bark.', activity=discord.Game("Starting Up!"))
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
 
@@ -50,15 +50,14 @@ async def on_ready():
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         return
-    await ctx.send("`{} occured while running {}`".format(error,ctx.command.name))
-    await ctx.send_help(ctx.command)
-    raise error
+    await ctx.send(f"`{error} occured while running {ctx.command.name}`")
+    bot.nextError = error
 
 @bot.command(name="oneTimeLoad",aliases = ["otl"])
 async def base_oneTimeLoad(ctx,cog):
     """Loads cog for single time use"""
     try:
-        self.bot.load_extension(f"cogs.{cog}.{cog}")
+        bot.load_extension(f"cogs.{cog}.{cog}")
     except:
         await ctx.send("Unable to load that cog.")
     else:

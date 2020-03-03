@@ -1,4 +1,7 @@
 
-settings/mod.txt
 *.pyc
+*.json
+.vscode/
+.vscode/settings.json
+.vscode/settings.json
 *.json
