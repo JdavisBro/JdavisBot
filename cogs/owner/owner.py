@@ -143,3 +143,7 @@ class owner(commands.Cog):
         embed = discord.Embed(title="I have been up for", description=uptime, color=colour)
         await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.is_owner()
+    async def raiseLastError(self,ctx):
+        raise self.bot.lastError

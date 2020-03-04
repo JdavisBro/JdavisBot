@@ -45,13 +45,16 @@ if __name__ == '__main__':
 async def on_ready():
     logging.info(f'Logged in as: {bot.user.name} - {bot.user.id}')
     logging.info(f'Discord.py Version: {discord.__version__}')
+    await bot.change_presence(activity=discord.Game("with a Fox!"))
 
 @bot.event
 async def on_command_error(ctx, error):
+    if ctx.command.name == "raiseLastError":
+        raise error
     if isinstance(error, commands.CommandNotFound):
         return
     await ctx.send(f"`{error} occured while running {ctx.command.name}`")
-    bot.nextError = error
+    bot.lastError = error
 
 @bot.command(name="oneTimeLoad",aliases = ["otl"])
 async def base_oneTimeLoad(ctx,cog):

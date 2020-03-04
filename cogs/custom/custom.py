@@ -93,7 +93,7 @@ class custom(commands.Cog):
         if not commandServerDict[guildid]:
             await ctx.send("There are no commands in this server.")
             return
-        text = f'Custom Commands for {ctx.guild.name}:\n'
+        text = f'Custom Commands for "{ctx.guild.name}":\n'
         for key in commandServerDict[guildid]:
             text += f'{str(key)}: {commandServerDict[guildid][key]}\n'
         for line in [text[i:i + 1990] for i in range(0, len(text), 1994)]:
@@ -102,8 +102,10 @@ class custom(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author.bot:
+            return
         guildid = str(message.guild.id)
-        with open("settings/prefixes.json") as f: # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        with open("settings/prefixes.json") as f:
             prefixes = json.load(f)
             prefix = prefixes.get(message.guild.id, self.bot.default_prefix)
         if message.content.startswith(prefix):
@@ -114,7 +116,7 @@ class custom(commands.Cog):
                 with open("cogs/custom/commands.json", "w+") as f:
                     json.dump(commandServerDict,f)
                 return
-            text = message.content.replace(prefix,'')
+            text = message.content[len(prefix)::]
             strnumber = 0
             cmd = ''
             args = ''

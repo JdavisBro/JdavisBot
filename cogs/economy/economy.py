@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import logging,json,datetime
+import logging,json,datetime,random
 
 def setup(bot):
     bot.add_cog(economy(bot))
@@ -58,6 +58,29 @@ class economy(commands.Cog):
             json.dump(bankDict,f)
         await ctx.send("Bank account created!")
 
+    @bank.group(name="mod")
+    @commands.has_permissions(manage_guild=True)
+    async def bank_mod(self,ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.send_help(ctx.command)
+
+    @bank_mod.command(name="set")
+    async def bank_mod_set(self,ctx,user:discord.Member,money:int):
+        guildid = str(ctx.guild.id)
+        userid = str(user.id)
+        with open("cogs/economy/economy.json", "r+") as f:
+            bankDict = json.load(f)
+        if guildid not in bankDict:
+            bankDict[guildid] = {}
+        if userid not in bankDict[guildid].keys():
+            await ctx.send(f"That user doesn't have a bank account! They can create one with `{prefix(self.bot,ctx.message)}bank new`")
+            return
+        bankDict[guildid][userid]["money"] = money
+        with open("cogs/economy/economy.json", "w+") as f:
+            json.dump(bankDict,f)
+        username = user.display_name + "'" if user.display_name.endswith('s') else user.display_name + "'s"
+        await ctx.send(f"{username} account has been set to £{money}!")
+
     @bank.command(name="balance",aliases=["bal"])
     async def bank_balance(self,ctx):
         guildid = str(ctx.guild.id)
@@ -99,3 +122,30 @@ class economy(commands.Cog):
         with open("cogs/economy/economy.json", "w+") as f:
             json.dump(bankDict,f)
         await ctx.send(f"£{getSetting('paydayMoney')} has been added to your account!")
+
+    @commands.command(name="gamble")
+    async def economy_gamble(self,ctx,amount:int):
+        if amount < int(getSetting("minimumGamblingCost")):
+            await ctx.send(f"Your gamble has to be at least {getSetting('minimumGamblingCost')}.")
+            return
+        guildid = str(ctx.guild.id)
+        userid = str(ctx.author.id)
+        with open("cogs/economy/economy.json", "r+") as f:
+            bankDict = json.load(f)
+        if guildid not in bankDict:
+            bankDict[guildid] = {}
+        if userid not in bankDict[guildid].keys():
+            await ctx.send(f"You don't have a bank account! You can create one with `{prefix(self.bot,ctx.message)}bank new`")
+            return
+        if int(bankDict[guildid][userid]["money"]) < amount:
+            await ctx.send("Your balance is too low to gamble that much!")
+            return
+        if random.randint(0,1) == 0:
+            moneyToAdd = amount * -1
+            await ctx.send(f"You lost! You now have £{int(bankDict[guildid][userid]['money']) + moneyToAdd} now!")
+        else:
+            moneyToAdd = amount
+            await ctx.send(f"You won! You now have £{int(bankDict[guildid][userid]['money'])+moneyToAdd} now!")
+        bankDict[guildid][userid]["money"] = str(int(bankDict[guildid][userid]["money"]) + moneyToAdd)
+        with open("cogs/economy/economy.json", "w+") as f:
+            json.dump(bankDict,f)
