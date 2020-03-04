@@ -2,7 +2,4 @@
 *.pyc
 *.json
 .vscode/
-.vscode/settings.json
-.vscode/settings.json
-*.json
 cogs/custom/commands.json
