@@ -7,7 +7,7 @@ def setup(bot):
 
 try:
     open("cogs/custom/commands.json","x")
-    open("cogs/custom/commands.json","w").write(dict())
+    open("cogs/custom/commands.json","w").write("{}")
     logging.info("commands.json created.")
 except:
     logging.info("commands.json found.")

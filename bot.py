@@ -49,8 +49,9 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
-    if ctx.command.name == "raiseLastError":
-        raise error
+    if ctx.command != None:
+        if ctx.command.name == "raiseLastError":
+            raise error
     if isinstance(error, commands.CommandNotFound):
         return
     await ctx.send(f"`{error} occured while running {ctx.command.name}`")
