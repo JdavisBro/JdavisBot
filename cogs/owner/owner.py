@@ -2,7 +2,9 @@ import discord, asyncio
 from discord.ext import commands
 import random
 import platform
-import time, datetime, json
+import time, datetime, json,logging
+
+logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
 
 def setup(bot):
     bot.add_cog(owner(bot))
@@ -147,3 +149,9 @@ class owner(commands.Cog):
     @commands.is_owner()
     async def raiseLastError(self,ctx):
         raise self.bot.lastError
+
+    @commands.command()
+    @commands.is_owner()
+    async def exec(self,ctx,*,executeThis):
+        logging.info(exec(executeThis))
+        exec(executeThis)
