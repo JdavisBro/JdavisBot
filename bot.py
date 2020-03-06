@@ -54,6 +54,9 @@ async def on_command_error(ctx, error):
             raise error
     if isinstance(error, commands.CommandNotFound):
         return
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"The argument {error.param} is missing!")
+        return
     await ctx.send(f"`{error} occured while running {ctx.command.name}`")
     bot.lastError = error
 
