@@ -33,6 +33,7 @@ class custom(commands.Cog):
         if you want to use more than one ctx argument you add a 0, e.g {0.message.id}
         you can also add arguments that the user fills in with $A"""
         guildid = str(ctx.guild.id)
+        name = name.lower()
         with open("cogs/custom/commands.json", "r+") as f:
             commandServerDict = json.load(f)
         if guildid not in commandServerDict:
@@ -124,7 +125,7 @@ class custom(commands.Cog):
             for word in text:
                 if strnumber == 0:
                     strnumber = 1
-                    cmd = word
+                    cmd = word.lower()
                 else:
                     args += word + " "
             args = args[0:len(args)-1]

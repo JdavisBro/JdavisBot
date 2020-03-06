@@ -111,46 +111,47 @@ class mod(commands.Cog):
     @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
-    async def ban(self,ctx,user: discord.Member,days: str = None,*,reason: str = None):
+    async def ban(self,ctx,days: str = None,reason: str = None,*users: discord.Member):
         """Bans user and deletes days of messages.
         If days is a word it will be treated 
         as the first word of the reason"""
-        if ctx.author == user:
-            await ctx.send("You can't ban yourself!")
-            return
-        if user == ctx.guild.owner:
-            await ctx.send("You can't ban the server owner!")
-            return
-        usertoprole = user.top_role
-        authortoprole = ctx.author.top_role
-        if usertoprole > authortoprole:
-            await ctx.send("That user has a role higher than you so you can't ban them!")
-            return
-        try:
-            days = int(days)
-        except:
-            if reason:
-                reason = days + ' ' + reason
-            days = 0
-        else:
-            if days > 7 or days < 0:
-                await ctx.send("Days must be between 0 and 7")
-        logchannel = self.bot.get_channel(getmodsetting(str(ctx.guild.id),'logchannel'))
-        try:
-            await ctx.guild.ban(user,reason=reason,delete_message_days=days)
-            await ctx.send("Banned.")
-        except discord.Forbidden:
-            await ctx.send("I was unable to ban that person.")
-        try:
-            colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
-            embed = discord.Embed(title="User Banned", colour=colour)
-            embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
-            embed.add_field(name="User:", value=str(user),inline=False)
-            embed.add_field(name="Days deleted:", value=str(days),inline=False)
-            embed.add_field(name="Reason:", value=reason, inline=False)
-            await logchannel.send(embed=embed)
-        except:
-            pass
+        for user in users:
+            if ctx.author == user:
+                await ctx.send(f"You can't ban yourself ({user})!")
+                return
+            if user == ctx.guild.owner:
+                await ctx.send(f"You can't ban the server owner! ({user})")
+                return
+            usertoprole = user.top_role
+            authortoprole = ctx.author.top_role
+            if usertoprole > authortoprole:
+                await ctx.send(f"That user has a role higher than you so you can't ban them! ({user})")
+                return
+            try:
+                days = int(days)
+            except:
+                if reason:
+                    reason = days + ' ' + reason
+                days = 0
+            else:
+                if days > 7 or days < 0:
+                    await ctx.send("Days must be between 0 and 7")
+            logchannel = self.bot.get_channel(getmodsetting(str(ctx.guild.id),'logchannel'))
+            try:
+                await ctx.guild.ban(user,reason=reason,delete_message_days=days)
+                await ctx.send(f"Banned {user}.")
+            except discord.Forbidden:
+                await ctx.send(f"I was unable to ban that {user}.")
+            try:
+                colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
+                embed = discord.Embed(title="User Banned", colour=colour)
+                embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url)
+                embed.add_field(name="User:", value=str(user),inline=False)
+                embed.add_field(name="Days deleted:", value=str(days),inline=False)
+                embed.add_field(name="Reason:", value=reason, inline=False)
+                await logchannel.send(embed=embed)
+            except:
+                pass
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
