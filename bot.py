@@ -3,17 +3,26 @@ from discord.ext import commands
 import sys, traceback, logging
 import time, os, json
 
-logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
+logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO) 
+
+try:
+    TOKEN = sys.argv[1]
+except:
+    logging.info("Token not defined, must be the second argument (after filename) in the running command.")
+    exit()
+
 default_prefix = '-'
+
 if not os.path.isdir('settings'):
     os.mkdir('settings')
     logging.info("Settings folder created.")
+
 def checkSettings(filename,write):
-    try:
+    if not os.path.isfile(f"settings/{filename}.json"):
         open(f"settings/{filename}.json","x")
         json.dump(write,open(f"settings/{filename}.json","w"))
         logging.info(f"{filename}.json created.")
-    except:
+    else:
         logging.info(f"{filename}.json found.")
 
 checkSettings('cogs',["cogs.owner.owner","cogs.custom.custom","cogs.mod.mod"])
@@ -22,9 +31,10 @@ checkSettings('prefixes',dict())
 def prefix(bot, message):
     with open("settings/prefixes.json","r+") as f:
         prefixes = json.load(f)
-        return prefixes.get(str(message.guild.id), default_prefix)
+        guildprefix = prefixes.get(str(message.guild.id), default_prefix)
+        return guildprefix
 
-bot = commands.Bot(command_prefix=prefix, description='Bark Bark.', activity=discord.Game("Starting Up!"))
+bot = commands.Bot(command_prefix=prefix, description='Bark Bark.', activity=discord.Game("Starting Up!"),case_insensitive=True)
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
 
@@ -61,6 +71,7 @@ async def on_command_error(ctx, error):
     bot.lastError = error
 
 @bot.command(name="oneTimeLoad",aliases = ["otl"])
+@commands.is_owner()
 async def base_oneTimeLoad(ctx,cog):
     """Loads cog for single time use"""
     try:
@@ -70,4 +81,4 @@ async def base_oneTimeLoad(ctx,cog):
     else:
         await ctx.send("Cog loaded!")
 
-bot.run(sys.argv[1], bot=True, reconnect=True)
+bot.run(TOKEN, bot=True, reconnect=True)

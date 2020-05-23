@@ -108,7 +108,7 @@ class custom(commands.Cog):
         guildid = str(message.guild.id)
         with open("settings/prefixes.json") as f:
             prefixes = json.load(f)
-            prefix = prefixes.get(message.guild.id, self.bot.default_prefix)
+            prefix = prefixes.get(str(message.guild.id), self.bot.default_prefix)
         if message.content.startswith(prefix):
             with open("cogs/custom/commands.json", "r+") as f:
                 commandServerDict = json.load(f)

@@ -206,3 +206,36 @@ class mod(commands.Cog):
         embed.add_field(name="Colour:", value=colour)
         embed.add_field(name="Creation Time:", value=role.created_at,inline=True)
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=["user","whois"])
+    async def userinfo(self,ctx,*,user: discord.Member=None):
+        if not user:
+            user = ctx.author
+        if user.is_on_mobile():
+            mobile = "Yes"
+        else:
+            mobile = "No"
+        for role in user.roles:
+            if role.name == "@everyone":
+                everyoneRole = role.mention
+                break
+        roles = [role.mention for role in user.roles]
+        roles.remove(everyoneRole)
+        permissions = []
+        for permission in list(user.guild_permissions):
+            if permission[1] == True:
+                permissions.append(permission[0])
+        if "administrator" in permissions:
+            permissions = ["administrator"]
+        joinposition = sum(m.joined_at < user.joined_at for m in ctx.guild.members if m.joined_at is not None)+1
+        embed = discord.Embed(title=str(user),description="<@{}>".format(user.id),color=user.colour)
+        embed.set_thumbnail(url=user.avatar_url)
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.add_field(name="User ID:", value=user.id,inline=True)
+        embed.add_field(name="Joined Here:", value=user.joined_at,inline=True)
+        embed.add_field(name="Created:", value=user.created_at,inline=True)
+        embed.add_field(name="On Mobile:", value=mobile,inline=True)
+        embed.add_field(name="Join Position:", value=joinposition,inline=True)
+        embed.add_field(name=f"Roles [{len(roles)}]:",value=" - ".join(roles),inline=False)
+        embed.add_field(name="Permissions:", value=" - ".join(permissions),inline=False)
+        await ctx.send(embed=embed)

@@ -16,7 +16,7 @@ class translate(commands.Cog):
     async def translate(self,ctx,*text):
         """Translate."""
         translator = Translator()
-        srcLanguage = None
+        srcLanguage = 'auto'
         destLanguage = 'en'
         translateThis = ''
         for word in text:
@@ -25,25 +25,18 @@ class translate(commands.Cog):
                     srcLanguage = word.replace("src=","")
                 elif word.replace("src=","") in googletrans.LANGCODES.keys():
                     srcLanguage = googletrans.LANGCODES[word.replace("src=","")]
-                else:
-                    pass
             elif word.startswith("dest="):
                 if word.replace("dest=","") in googletrans.LANGCODES.values():
                     destLanguage = word.replace("dest=","")
                 elif word.replace("dest=","") in googletrans.LANGCODES.keys():
                     destLanguage = googletrans.LANGCODES[word.replace("dest=","")]
-                else:
-                    pass
             else:
                 translateThis += word+" "
         if translateThis == '':
             await ctx.send("The message can't be blank!")
             return
         translateThis = translateThis[:-1]
-        if srcLanguage != None:
-            translated = translator.translate(translateThis,dest=destLanguage,src=srcLanguage)
-        else:
-            translated = translator.translate(translateThis,dest=destLanguage)
+        translated = translator.translate(translateThis,dest=destLanguage,src=srcLanguage)
         embed = discord.Embed(title="Translation", colour=discord.Colour(0x188079))
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name=f"Original ({googletrans.LANGUAGES[translated.src]})", value=f"{translated.origin}", inline=True)

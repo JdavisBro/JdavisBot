@@ -2,7 +2,7 @@ import discord, asyncio
 from discord.ext import commands
 import random
 import platform
-import time, datetime, json,logging
+import time, datetime, json, logging
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
 
@@ -119,6 +119,7 @@ class owner(commands.Cog):
             await ctx.send("Cog unloaded!")
 
     @commands.command(name="reload")
+    @commands.is_owner()
     async def reload_alias(self,ctx,cog=None):
         command = self.bot.get_command("cog reload")
         await ctx.invoke(command,cog)
@@ -153,5 +154,4 @@ class owner(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def exec(self,ctx,*,executeThis):
-        logging.info(exec(executeThis))
-        exec(executeThis)
+        logging.info(f"Result: {exec(executeThis)}")

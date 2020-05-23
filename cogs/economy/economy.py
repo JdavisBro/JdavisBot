@@ -81,6 +81,25 @@ class economy(commands.Cog):
         username = user.display_name + "'" if user.display_name.endswith('s') else user.display_name + "'s"
         await ctx.send(f"{username} account has been set to £{money}!")
 
+    @bank_mod.command(name="paydayNow")
+    async def bank_mod_paydaynow(self,ctx,user:discord.Member=None):
+        if not user:
+            user = ctx.author
+        guildid = str(ctx.guild.id)
+        userid = str(user.id)
+        with open("cogs/economy/economy.json", "r+") as f:
+            bankDict = json.load(f)
+        if guildid not in bankDict:
+            bankDict[guildid] = {}
+        if userid not in bankDict[guildid].keys():
+            await ctx.send(f"That user doesn't have a bank account! They can create one with `{prefix(self.bot,ctx.message)}bank new`")
+            return
+        bankDict[guildid][userid]["nextPaydayTime"] = 0
+        with open("cogs/economy/economy.json", "w+") as f:
+            json.dump(bankDict,f)
+        username = user.display_name + "'" if user.display_name.endswith('s') else user.display_name + "'s"
+        await ctx.send(f"{username} payday timer has been set to 0!")
+
     @bank.command(name="balance",aliases=["bal"])
     async def bank_balance(self,ctx):
         guildid = str(ctx.guild.id)
