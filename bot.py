@@ -66,8 +66,10 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f"The argument {error.param} is missing!")
+        await ctx.send_help(ctx.command)
         return
-    await ctx.send(f"`{error} occured while running {ctx.command.name}`")
+    await ctx.send(f"`{error} -- {ctx.command.name}`")
+    await ctx.send_help(ctx.command)
     bot.lastError = error
 
 @bot.command(name="oneTimeLoad",aliases = ["otl"])
