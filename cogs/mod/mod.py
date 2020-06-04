@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import random,json
-import logging
+import logging,re
 
 def setup(bot):
     bot.add_cog(mod(bot))
@@ -86,6 +86,29 @@ class mod(commands.Cog):
             prefixes[guildid] = prefix
             json.dump(prefixes,f)
             await ctx.send(f"Prefix has been set to {prefix}!")
+
+    @modset.command(name="invitecensoring",aliases=["invites"])
+    async def modset_invitecensoring(self,ctx,enabled:bool=True):
+        guildid = str(ctx.guild.id)
+        with open("settings/mod.json","r+") as f:
+            settings = json.load(f)
+        if guildid not in settings:
+            with open("settings/nod.json","r+") as f:
+                settings[guildid] = {}
+                json.dump(settings,f)
+        if "invite" not in settings[guildid]:
+            with open("settings/nod.json","r+") as f:
+                settings[guildid] ["invite"] = True
+                json.dump(settings,f)
+        if enabled == settings[guildid]["invite"]:
+            await ctx.send("That's already the setting!")
+            return
+        with open("settings/mod.json","w+") as f:
+            settings[guildid]["invite"] = enabled
+            json.dump(settings,f)
+            await ctx.send(f"Invite Censoring has been set to {enabled}!")
+
+
 
     @commands.group()
     @commands.has_permissions(manage_roles=True)
@@ -239,3 +262,17 @@ class mod(commands.Cog):
         embed.add_field(name=f"Roles [{len(roles)}]:",value=" - ".join(roles),inline=False)
         embed.add_field(name="Permissions:", value=" - ".join(permissions),inline=False)
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=["members"])
+    async def membercount(self,ctx):
+        embed = discord.Embed(title=f"There are {ctx.guild.member_count} members!", colour=discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255)))
+        await ctx.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        # INVITE CENSORSHIP
+        if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
+            if not message.author.permissions_in(message.channel).manage_guild:
+                if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
+                    await message.delete()
+                    await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)

@@ -68,6 +68,9 @@ async def on_command_error(ctx, error):
         await ctx.send(f"The argument {error.param} is missing!")
         await ctx.send_help(ctx.command)
         return
+    if isinstance(error, commands.BadArgument):
+        await ctx.send(error)
+        return
     await ctx.send(f"`{error} -- {ctx.command.name}`")
     await ctx.send_help(ctx.command)
     bot.lastError = error
