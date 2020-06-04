@@ -103,6 +103,8 @@ class custom(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
+        if isinstance(message.channel,discord.DMChannel):
+            return
         if message.author.bot:
             return
         guildid = str(message.guild.id)

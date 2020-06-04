@@ -29,14 +29,18 @@ checkSettings('cogs',["cogs.owner.owner","cogs.custom.custom","cogs.mod.mod"])
 checkSettings('prefixes',dict())
 
 def prefix(bot, message):
+    if isinstance(message.channel,discord.DMChannel):
+        return commands.when_mentioned_or(f"{default_prefix} ",default_prefix)(bot,message)
     with open("settings/prefixes.json","r+") as f:
         prefixes = json.load(f)
         guildprefix = prefixes.get(str(message.guild.id), default_prefix)
-        return guildprefix
-
+        prefixes = [f"{guildprefix} ",guildprefix]
+        return commands.when_mentioned_or(*prefixes)(bot,message)
+    
 bot = commands.Bot(command_prefix=prefix, description='Bark Bark.', activity=discord.Game("Starting Up!"),case_insensitive=True)
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
+bot.currently_loaded_cogs = []
 
 with open("settings/cogs.json","r+") as f:
     extensions = json.load(f)
@@ -50,6 +54,7 @@ if __name__ == '__main__':
             raise
         else:
             logging.info("{} loaded.".format(extension))
+            bot.currently_loaded_cogs.append(extension.split(".")[2])
 
 @bot.event
 async def on_ready():

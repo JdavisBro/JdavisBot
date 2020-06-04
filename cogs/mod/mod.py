@@ -270,9 +270,16 @@ class mod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        # INVITE CENSORSHIP
-        if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
-            if not message.author.permissions_in(message.channel).manage_guild:
-                if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
-                    await message.delete()
-                    await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)
+        if isinstance(message.channel,discord.TextChannel):
+            # INVITE CENSORSHIP
+            if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
+                if not message.author.permissions_in(message.channel).manage_guild:
+                    if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
+                        await message.delete()
+                        await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)
+                        if getmodsetting(message.guild.id,"logchannel"):
+                            colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
+                            embed = discord.Embed(title="User send an invite.", colour=colour)
+                            embed.add_field(name="User:", value=str(message.author),inline=False)
+                            embed.add_field(name="Message:", value=message.content, inline=False)
+                            await self.bot.get_channel(getmodsetting(message.guild.id,"logchannel")).send(embed=embed)

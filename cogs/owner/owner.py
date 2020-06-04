@@ -1,7 +1,7 @@
 import discord, asyncio
 from discord.ext import commands
 import random
-import platform
+import platform,os
 import time, datetime, json, logging
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
@@ -39,7 +39,7 @@ class owner(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @cog.command(aliases = ['l'])
-    async def load(self,ctx,cog):
+    async def load(self,ctx,*cogs):
         """Loads a cog."""
         await ctx.send("Warning: Could be bad, uh oh.\nIf you want to continue say `yes`.")
         def check(m):
@@ -50,36 +50,40 @@ class owner(commands.Cog):
             await ctx.send("Timed Out. Not loading.")
         else:
             if msg.content == "yes":
-                try:
-                    self.bot.load_extension("cogs.{0}.{0}".format(cog))
-                except:
-                    await ctx.send("Failed.")
-                    raise
-                else:
-                    with open("settings/cogs.json","r+") as f:
-                        extensions = json.load(f)
-                    extensions.append("cogs.{0}.{0}".format(cog))
-                    with open("settings/cogs.json","w+") as f:
-                        json.dump(extensions,f)
-                    await ctx.send("Cog {} loaded.".format(cog))
+                for cog in cogs:
+                    try:
+                        self.bot.load_extension("cogs.{0}.{0}".format(cog))
+                    except:
+                        await ctx.send("Failed.")
+                        raise
+                    else:
+                        with open("settings/cogs.json","r+") as f:
+                            extensions = json.load(f)
+                        extensions.append("cogs.{0}.{0}".format(cog))
+                        with open("settings/cogs.json","w+") as f:
+                            json.dump(extensions,f)
+                        await ctx.send("Cog {} loaded.".format(cog))
+                        self.bot.currently_loaded_cogs.append(cog)
 
     @cog.command(aliases = ['u'])
-    async def unload(self,ctx,cog):
+    async def unload(self,ctx,*cogs):
         """Unloads a cog."""
-        if cog == 'owner':
-            await ctx.send("Bruh, unloading owner would make you unable to load cogs, so that's a no.")
-            return
-        try:
-            self.bot.unload_extension("cogs.{0}.{0}".format(cog))
-        except:
-            await ctx.send("Cog not loaded but removing it.")
-            pass
-        with open("settings/cogs.json","r+") as f:
-            extensions = json.load(f)
-        extensions.remove("cogs.{0}.{0}".format(cog))
-        with open("settings/cogs.json","w+") as f:
-            json.dump(extensions,f)
-        await ctx.send("Cog {} unloaded.".format(cog))
+        for cog in cogs:
+            if cog == 'owner':
+                await ctx.send("Bruh, unloading owner would make you unable to load cogs, so that's a no.")
+                return
+            try:
+                self.bot.unload_extension("cogs.{0}.{0}".format(cog))
+            except:
+                await ctx.send("Cog not loaded but removing it.")
+                pass
+            with open("settings/cogs.json","r+") as f:
+                extensions = json.load(f)
+            extensions.remove("cogs.{0}.{0}".format(cog))
+            with open("settings/cogs.json","w+") as f:
+                json.dump(extensions,f)
+            await ctx.send("Cog {} unloaded.".format(cog))
+            self.bot.currently_loaded_cogs.remove(cog)
 
     @cog.command(aliases = ['r'])
     async def reload(self,ctx,cog=None):
@@ -98,6 +102,19 @@ class owner(commands.Cog):
             await ctx.send("Cog {} reloaded.".format(cog))
             exec(f"self.bot.previousReload = cog")
 
+    @cog.command(name="list",aliases=["ls"])
+    async def cogs_list(self,ctx):
+        """Lists loaded and unloaded cogs."""
+        colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
+        unloaded_cogs = []
+        for cog in filter(os.path.isdir, ["cogs/"+fileDir for fileDir in os.listdir("cogs")]):
+            (unloaded_cogs.append(cog[5:])) if cog[5:] not in self.bot.currently_loaded_cogs else None
+        embed = discord.Embed(colour=colour,title="Cogs.")
+        embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.add_field(name="Loaded Cogs:", value=", ".join(self.bot.currently_loaded_cogs)+".", inline=False)
+        embed.add_field(name="Unloaded Cogs:", value=", ".join(unloaded_cogs)+".", inline=False)
+        await ctx.send(embed=embed)
+
     @cog.command(aliases = ["otl"])
     async def oneTimeLoad(self,ctx,cog):
         """Loads cog for single time use"""
@@ -107,6 +124,7 @@ class owner(commands.Cog):
             await ctx.send("Unable to load that cog.")
         else:
             await ctx.send("Cog loaded!")
+            self.bot.currently_loaded_cogs.append(cog)
 
     @cog.command(aliases = ["otul"])
     async def oneTimeUnload(self,ctx,cog):
@@ -117,6 +135,7 @@ class owner(commands.Cog):
             await ctx.send("Unable to unload that cog?")
         else:
             await ctx.send("Cog unloaded!")
+            self.bot.currently_loaded_cogs.remove(cog)
 
     @commands.command(name="reload")
     @commands.is_owner()
