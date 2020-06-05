@@ -137,6 +137,8 @@ class permissions(commands.Cog):
         await ctx.send(embed=embed)
 
     async def bot_check_once(self,ctx):
+        if isinstance(ctx.channel,discord.DMChannel):
+            return True
         guildid = str(ctx.guild.id)
         command = ctx.command.name
         roles = [str(role.id) for role in list(ctx.author.roles)[0:]]

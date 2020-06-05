@@ -40,7 +40,12 @@ class custom(commands.Cog):
             commandServerDict[guildid] = dict()
             with open("cogs/custom/commands.json", "w+") as f:
                 json.dump(commandServerDict,f)
-        if name in self.bot.commands:
+        actualcommands = [command.name for command in self.bot.commands]
+        for aliases in [command.aliases for command in self.bot.commands]:
+            if aliases:
+                for alias in aliases:
+                    actualcommands.append(alias)
+        if name in actualcommands:
             await ctx.send("There is already an actual command named that.")
             return
         if name in commandServerDict[guildid]:

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import random,json
-import logging,re
+import logging,re,asyncio
 
 def setup(bot):
     bot.add_cog(mod(bot))
@@ -14,6 +14,13 @@ try:
     logging.info("mod.json created.")
 except:
     logging.info("mod.json found.")
+
+try:
+    open("cogs/mod/persists.json","x")
+    json.dump(dict(),open("cogs/mod/persists.json","w"))
+    logging.info("persists.json created.")
+except:
+    logging.info("persists.json found.")
 
 def getmodsetting(guildid,setting):
     guildid = str(guildid)
@@ -30,6 +37,58 @@ def getmodsetting(guildid,setting):
             setting = settings[guildid][setting]
             return setting
         
+def getuserpersists(guildid,userid):
+    guildid = str(guildid)
+    userid = str(userid)
+    with open("cogs/mod/persists.json") as f:
+        persists = json.load(f)
+        if guildid not in persists:
+            persists[guildid] = {}
+            with open("cogs/mod/persists.json","w") as fw:
+                json.dump(persists,fw)
+        if userid not in persists[guildid]:
+            return None
+        else:
+            return persists[guildid][userid]
+
+async def adduserpersist(self,ctx,user,role):
+    guildid = str(ctx.guild.id)
+    userid = str(user.id)
+    roleid = str(role.id)
+    with open("cogs/mod/persists.json") as f:
+        persists = json.load(f)
+        if guildid not in persists:
+            persists[guildid] = {}
+            with open("cogs/mod/persists.json","w") as fw:
+                json.dump(persists,fw)
+        if userid not in persists[guildid]:
+            persists[guildid][userid] = []
+        if roleid in persists[guildid][userid]:
+            return f"{user} already has {role} on their persist list!"
+        persists[guildid][userid].append(roleid)
+        with open("cogs/mod/persists.json","w") as fw:
+            json.dump(persists,fw)
+        return f"{user} will now be given {role} when they rejoin (until you remove it from them with `{prefix(self,ctx.message)}role remove '{role.name}' '{user.name}''`)"
+
+async def deluserpersist(self,ctx,user,role):
+    guildid = str(ctx.guild.id)
+    userid = str(user.id)
+    roleid = str(role.id)
+    with open("cogs/mod/persists.json") as f:
+        persists = json.load(f)
+        persists[guildid][userid].remove(roleid)
+        with open("cogs/mod/persists.json","w") as fw:
+            json.dump(persists,fw)
+        return f"{user} will no longer be given {role} when they rejoin."
+
+
+def prefix(self, message):
+    with open("settings/prefixes.json","r") as f:
+        prefixes = json.load(f)
+        guildprefix = prefixes.get(str(message.guild.id), self.bot.default_prefix)
+        return guildprefix
+
+
 class mod(commands.Cog):
     """Mod cog!"""
 
@@ -108,8 +167,6 @@ class mod(commands.Cog):
             json.dump(settings,f)
             await ctx.send(f"Invite Censoring has been set to {enabled}!")
 
-
-
     @commands.group()
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
@@ -118,16 +175,44 @@ class mod(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @role.command(name = 'add',no_pm=True)
-    async def role_add(self,ctx,role: discord.Role,user: discord.Member = None):
+    async def role_add(self,ctx,role: discord.Role,user: discord.Member = None,persist=False):
         if not user:
             user = ctx.author
+        if not ctx.guild.me.guild_permissions.manage_roles:
+            await ctx.send("I don't have permission to manage roles!")
+            return
+        if ctx.author.top_role <= role:
+            await ctx.send("You don't have permission to give that role!")
+            return
+        if role >= ctx.guild.me.top_role:
+            await ctx.send("I can't give that role it's higher above me!")
+            return
+        if persist:
+            await ctx.send(await adduserpersist(self,ctx,user,role))
+        if role in user.roles:
+            await ctx.send(f"{user} already has {role}!")
+            return
         await user.add_roles(role)
         await ctx.send("{} has been given the {} role.".format(user,role))
     
-    @role.command(name = 'remove')
+    @role.command(name = 'remove',aliases=["del","rm"])
     async def role_remove(self,ctx,role: discord.Role,user: discord.Member = None):
         if not user:
             user = ctx.author
+        if not ctx.guild.me.guild_permissions.manage_roles:
+            await ctx.send("I don't have permission to manage roles!")
+            return
+        if ctx.author.top_role <= role:
+            await ctx.send("You don't have permission to take remove role!")
+            return
+        if role >= ctx.guild.me.top_role:
+            await ctx.send("I can't remove that role it's higher above me!")
+            return
+        if str(role.id) in getuserpersists(ctx.guild.id,user.id):
+            await ctx.send(await deluserpersist(self,ctx,user,role))
+        if role not in user.roles:
+            await ctx.send(f"{user} doesn't have {role}!")
+            return
         await user.remove_roles(role)
         await ctx.send("{} has been removed from the {} role".format(user,role))
 
@@ -270,16 +355,29 @@ class mod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author.discriminator == "0000":
+            return
         if isinstance(message.channel,discord.TextChannel):
             # INVITE CENSORSHIP
-            if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
-                if not message.author.permissions_in(message.channel).manage_guild:
-                    if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
-                        await message.delete()
-                        await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)
-                        if getmodsetting(message.guild.id,"logchannel"):
-                            colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
-                            embed = discord.Embed(title="User send an invite.", colour=colour)
-                            embed.add_field(name="User:", value=str(message.author),inline=False)
-                            embed.add_field(name="Message:", value=message.content, inline=False)
-                            await self.bot.get_channel(getmodsetting(message.guild.id,"logchannel")).send(embed=embed)
+            if message.type == discord.MessageType.default:
+                if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
+                    if not message.author.permissions_in(message.channel).manage_guild:
+                        if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
+                            await message.delete()
+                            await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)
+                            if getmodsetting(message.guild.id,"logchannel"):
+                                colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
+                                embed = discord.Embed(title="User send an invite.", colour=colour)
+                                embed.add_field(name="User:", value=str(message.author),inline=False)
+                                embed.add_field(name="Message:", value=message.content, inline=False)
+                                await self.bot.get_channel(getmodsetting(message.guild.id,"logchannel")).send(embed=embed)
+            if message.type == discord.MessageType.new_member:
+                await message.add_reaction("🎉")
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        persists = getuserpersists(member.guild.id,member.id)
+        if persists:
+            roles = [member.guild.get_role(int(roleid)) for roleid in persists]
+            await asyncio.sleep(0.5)
+            await member.add_roles(*roles)
