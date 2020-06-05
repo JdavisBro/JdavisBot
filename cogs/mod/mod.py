@@ -21,36 +21,7 @@ try:
     logging.info("persists.json created.")
 except:
     logging.info("persists.json found.")
-
-def getmodsetting(guildid,setting):
-    guildid = str(guildid)
-    with open("settings/mod.json") as f:
-        settings = json.load(f)
-        if guildid not in settings:
-            settings[guildid] = {}
-            with open("settings/mod.json","w") as f:
-                json.dump(settings,f)
-        if setting not in settings[guildid]:
-            setting = None
-            return setting
-        else:
-            setting = settings[guildid][setting]
-            return setting
         
-def getuserpersists(guildid,userid):
-    guildid = str(guildid)
-    userid = str(userid)
-    with open("cogs/mod/persists.json") as f:
-        persists = json.load(f)
-        if guildid not in persists:
-            persists[guildid] = {}
-            with open("cogs/mod/persists.json","w") as fw:
-                json.dump(persists,fw)
-        if userid not in persists[guildid]:
-            return None
-        else:
-            return persists[guildid][userid]
-
 async def adduserpersist(self,ctx,user,role):
     guildid = str(ctx.guild.id)
     userid = str(user.id)
@@ -95,6 +66,35 @@ class mod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def getmodsetting(self,guildid,setting):
+        guildid = str(guildid)
+        with open("settings/mod.json") as f:
+            settings = json.load(f)
+            if guildid not in settings:
+                settings[guildid] = {}
+                with open("settings/mod.json","w") as f:
+                    json.dump(settings,f)
+            if setting not in settings[guildid]:
+                setting = None
+                return setting
+            else:
+                setting = settings[guildid][setting]
+                return setting
+
+    def getuserpersists(self,guildid,userid):
+        guildid = str(guildid)
+        userid = str(userid)
+        with open("cogs/mod/persists.json") as f:
+            persists = json.load(f)
+            if guildid not in persists:
+                persists[guildid] = {}
+                with open("cogs/mod/persists.json","w") as fw:
+                    json.dump(persists,fw)
+            if userid not in persists[guildid]:
+                return None
+            else:
+                return persists[guildid][userid]
+
     @commands.group(name="mod")
     @commands.has_permissions(manage_guild=True)
     @commands.guild_only()
@@ -105,7 +105,7 @@ class mod(commands.Cog):
     @modset.command()
     async def logchannel(self,ctx,channel: discord.TextChannel=None):
         guildid = str(ctx.guild.id)
-        setting = getmodsetting(guildid,'logchannel')
+        setting = self.getmodsetting(guildid,'logchannel')
         try:
             logchannel = self.bot.get_channel(int(setting))
         except:
@@ -144,7 +144,7 @@ class mod(commands.Cog):
         with open("settings/prefixes.json","w+") as f:
             prefixes[guildid] = prefix
             json.dump(prefixes,f)
-            await ctx.send(f"Prefix has been set to {prefix}!")
+            await ctx.send(f"Prefix has been set to ``{prefix}``!")
 
     @modset.command(name="invitecensoring",aliases=["invites"])
     async def modset_invitecensoring(self,ctx,enabled:bool=True):
@@ -208,7 +208,7 @@ class mod(commands.Cog):
         if role >= ctx.guild.me.top_role:
             await ctx.send("I can't remove that role it's higher above me!")
             return
-        if str(role.id) in getuserpersists(ctx.guild.id,user.id):
+        if str(role.id) in self.getuserpersists(ctx.guild.id,user.id):
             await ctx.send(await deluserpersist(self,ctx,user,role))
         if role not in user.roles:
             await ctx.send(f"{user} doesn't have {role}!")
@@ -244,7 +244,7 @@ class mod(commands.Cog):
             else:
                 if days > 7 or days < 0:
                     await ctx.send("Days must be between 0 and 7")
-            logchannel = self.bot.get_channel(getmodsetting(str(ctx.guild.id),'logchannel'))
+            logchannel = self.bot.get_channel(self.getmodsetting(str(ctx.guild.id),'logchannel'))
             try:
                 await ctx.guild.ban(user,reason=reason,delete_message_days=days)
                 await ctx.send(f"Banned {user}.")
@@ -277,7 +277,7 @@ class mod(commands.Cog):
         if usertoprole > authortoprole:
             await ctx.send("That user has a role higher than you so you can't kick them!")
             return
-        logchannel = self.bot.get_channel(getmodsetting(ctx.guild.id,'logchannel'))
+        logchannel = self.bot.get_channel(self.getmodsetting(ctx.guild.id,'logchannel'))
         try:
             await ctx.guild.kick(user,reason=reason)
             await ctx.send("Kicked.")
@@ -360,23 +360,23 @@ class mod(commands.Cog):
         if isinstance(message.channel,discord.TextChannel):
             # INVITE CENSORSHIP
             if message.type == discord.MessageType.default:
-                if getmodsetting(message.guild.id,"invite") or getmodsetting(message.guild.id,"invite") is None:
+                if self.getmodsetting(message.guild.id,"invite") or self.getmodsetting(message.guild.id,"invite") is None:
                     if not message.author.permissions_in(message.channel).manage_guild:
                         if re.search(r"discord.gg/\S",message.content) or re.search(r"discord.com/invite/\S",message.content) or re.search(r"discordapp.com/invite/\S",message.content):
                             await message.delete()
                             await message.channel.send(f"{message.author.mention}, no invite links!",delete_after=5)
-                            if getmodsetting(message.guild.id,"logchannel"):
+                            if self.getmodsetting(message.guild.id,"logchannel"):
                                 colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
                                 embed = discord.Embed(title="User send an invite.", colour=colour)
                                 embed.add_field(name="User:", value=str(message.author),inline=False)
                                 embed.add_field(name="Message:", value=message.content, inline=False)
-                                await self.bot.get_channel(getmodsetting(message.guild.id,"logchannel")).send(embed=embed)
+                                await self.bot.get_channel(self.getmodsetting(message.guild.id,"logchannel")).send(embed=embed)
             if message.type == discord.MessageType.new_member:
                 await message.add_reaction("🎉")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        persists = getuserpersists(member.guild.id,member.id)
+        persists = self.getuserpersists(member.guild.id,member.id)
         if persists:
             roles = [member.guild.get_role(int(roleid)) for roleid in persists]
             await asyncio.sleep(0.5)

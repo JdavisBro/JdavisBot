@@ -10,6 +10,7 @@ class echo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.is_owner()
     @commands.command()
     async def echo(self,ctx,*,echo):
         """Echos what you say"""
@@ -17,3 +18,4 @@ class echo(commands.Cog):
             await ctx.send(echo.format(ctx))
         except:
             await ctx.send("There was an error.")
+        await ctx.message.delete()
