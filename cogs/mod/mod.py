@@ -217,6 +217,40 @@ class mod(commands.Cog):
         await ctx.send("{} has been removed from the {} role".format(user,role))
 
     @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
+    async def mute(self,ctx,length,reason,*users: discord.Member):
+        for roles in ctx.guild.roles:
+            if roles.name == "Muted" or roles.name == "muted":
+                role = roles
+                break
+        if role == None:
+            await ctx.send(f"""I couldn't find a role named "Muted", Reply with "create" if you would like me to create one or use the `{prefix(self,ctx.message)}mod muterole ROLE` command to set your own one.""")
+            def check(m):
+                return (m.content.lower() == "create" or m.content.lower() == "no") and m.channel == ctx.channel and m.author == ctx.author
+            try:
+                await self.bot.wait_for('message',check=check,timeout=15)
+            except asyncio.TimeoutError:
+                await ctx.send("Timed Out. Not creating.")
+            else:
+                logging.info("blah blah make role here")
+        for user in users:
+            if not user:
+                user = ctx.author
+            if not ctx.guild.me.guild_permissions.manage_roles:
+                await ctx.send("I don't have permission to manage roles!")
+                return
+            if ctx.author.top_role <= role:
+                await ctx.send("You don't have permission to take remove role!")
+                return
+            if role >= ctx.guild.me.top_role:
+                await ctx.send("I can't remove that role it's higher above me!")
+                return
+            await adduserpersist(self,ctx,user,role)
+            await user.add_roles(role)
+            await ctx.send(f"*{user} has been muted!*")            
+
+    @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.guild_only()
     async def ban(self,ctx,days: str = None,reason: str = None,*users: discord.Member):
@@ -232,8 +266,8 @@ class mod(commands.Cog):
                 return
             usertoprole = user.top_role
             authortoprole = ctx.author.top_role
-            if usertoprole > authortoprole:
-                await ctx.send(f"That user has a role higher than you so you can't ban them! ({user})")
+            if usertoprole >= authortoprole:
+                await ctx.send(f"That user has a role higher than or equal to you so you can't ban them! ({user})")
                 return
             try:
                 days = int(days)
@@ -274,8 +308,8 @@ class mod(commands.Cog):
             return
         usertoprole = user.top_role
         authortoprole = ctx.author.top_role
-        if usertoprole > authortoprole:
-            await ctx.send("That user has a role higher than you so you can't kick them!")
+        if usertoprole >= authortoprole:
+            await ctx.send("That user has a role higher than or equal to you so you can't kick them!")
             return
         logchannel = self.bot.get_channel(self.getmodsetting(ctx.guild.id,'logchannel'))
         try:

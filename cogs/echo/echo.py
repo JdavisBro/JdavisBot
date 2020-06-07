@@ -18,4 +18,7 @@ class echo(commands.Cog):
             await ctx.send(echo.format(ctx))
         except:
             await ctx.send("There was an error.")
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except:
+            pass

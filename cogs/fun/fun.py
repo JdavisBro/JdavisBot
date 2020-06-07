@@ -61,3 +61,10 @@ class fun(commands.Cog):
         im.save(arr, format='PNG')
         arr.seek(0)
         return discord.File(arr,filename="worm.png"),wormColour
+
+    @grp_fun.command()
+    async def amidumbandstupid(self,ctx,*,user:discord.Member=None):
+        if user == None or user == ctx.author:
+            await ctx.send("You are dumb and stupid")
+        else:
+            await ctx.send(f"{user.display_name} is dumb and stupid")
