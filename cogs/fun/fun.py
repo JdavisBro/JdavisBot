@@ -94,7 +94,8 @@ class fun(commands.Cog):
         "koala, bird, fox, panda, dog and cat"
         animal = animal.lower()
         if animal not in ["koala","bird","fox","panda","dog","cat"]:
-            await ctx.send(f"You can't get a {animal} fact! It must be either koala, bird, fox, panda, dog or cat")
+            await ctx.send(f"You can't get a{'n' if animal[0] in ['a','e','i','o','u'] else ''} {animal} fact! It must be either koala, bird, fox, panda, dog or cat")
+            return
         await ctx.channel.trigger_typing()
         fact = requests.get(f'https://some-random-api.ml/facts/{animal}').json()["fact"]
         embed = discord.Embed(colour=discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255)),title=f"Fact about {animal}: {fact}")
@@ -106,7 +107,8 @@ class fun(commands.Cog):
         "koala, birb, fox, red_panda, panda, dog and cat"
         animal = animal.lower()
         if animal not in ["koala","birb","fox","red_panda","panda","dog","cat"]:
-            await ctx.send(f"You can't get a {animal} image! It must be either koala, birb, fox, red_panda, panda, dog or cat")
+            await ctx.send(f"You can't get a{'n' if animal[0] in ['a','e','i','o','u'] else ''} {animal} image! It must be either koala, birb, fox, red_panda, panda, dog or cat")
+            return
         await ctx.channel.trigger_typing()
         image = requests.get(f'https://some-random-api.ml/img/{animal}').json()["link"]
         embed = discord.Embed(colour=discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255)),title=f"Random {animal.replace('_',' ')} image:",url=image).set_image(url=image)
