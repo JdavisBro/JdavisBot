@@ -132,7 +132,8 @@ class fun(commands.Cog):
             columns = 14
             bombs = 40
         if bombNumber:
-            bombs = bombNumber
+            if bombNumber < rows*columms:
+                bombs = bombNumber
         board = await self.create_minesweeper(rows,columns,bombs)
         output = ""
         for row in board:
