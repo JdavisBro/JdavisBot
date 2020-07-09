@@ -116,7 +116,7 @@ class fun(commands.Cog):
         await ctx.send(embed=embed)
 
     @grp_fun.command(name="minesweeper")
-    async def grp_fun_minesweeper(self,ctx,size="small"):
+    async def grp_fun_minesweeper(self,ctx,size="small",bombNumber:int=None):
         if size not in ["small","medium","large"]:
             await ctx.send("Size must be small, medium or large.")
         if size == "small":
@@ -131,6 +131,8 @@ class fun(commands.Cog):
             rows = 14
             columns = 14
             bombs = 40
+        if bombNumber:
+            bombs = bombNumber
         board = await self.create_minesweeper(rows,columns,bombs)
         output = ""
         for row in board:
