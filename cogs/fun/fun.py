@@ -153,7 +153,7 @@ class fun(commands.Cog):
             while True:
                 targetR = random.randint(1,rows)
                 targetC = random.randint(1,columns)
-                if (board[targetR][targetC] != "b") and ((targetR != round((rows+1)/2)) and (targetC != round((columns+1)/2))):
+                if (board[targetR][targetC] != "b") and ((targetR != round((rows+1)/2)) or (targetC != round((columns+1)/2))):
                     board[targetR][targetC] = "b"
                     break
         for row in board:
