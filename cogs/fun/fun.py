@@ -124,12 +124,12 @@ class fun(commands.Cog):
             columns = 5
             bombs = 5
         elif size == "medium":
-            rows = 10
-            columns = 10
+            rows = 9
+            columns = 9
             bombs = 20
         elif size == "large":
-            rows = 14
-            columns = 14
+            rows = 13
+            columns = 13
             bombs = 40
         if bombNumber:
             if bombNumber < rows*columns:
