@@ -98,7 +98,7 @@ class fun(commands.Cog):
             return
         await ctx.channel.trigger_typing()
         fact = requests.get(f'https://some-random-api.ml/facts/{animal}').json()["fact"]
-        fact = [ fact[i:i+231] for i in range(0, len(fact), 220) ]
+        fact = [ fact[i:i+231] for i in range(0, len(fact), 231) ]
         embed = discord.Embed(colour=discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255)),title=f"Fact about {animal}: {fact[0]}")
         if len(fact) > 1:
             embed.description = fact[1]
