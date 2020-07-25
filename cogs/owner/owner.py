@@ -41,7 +41,7 @@ class owner(commands.Cog):
     @cog.command(aliases = ['l'])
     async def load(self,ctx,*cogs):
         """Loads a cog."""
-        await ctx.send("Warning: Could be bad, uh oh.\nIf you want to continue say `yes`.")
+        await ctx.send("Are You Sure?!?\nIf you want to continue say `yes`.")
         def check(m):
             return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
         try:
@@ -147,8 +147,8 @@ class owner(commands.Cog):
     async def info(self,ctx):
         colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
         appinfo = await self.bot.application_info()
-        embed = discord.Embed(colour=colour,description="Fox WOOF WOOF!")
-        embed.set_author(name="FoxBot", url="https://wwww.github.com/JdavisBro/FoxBot", icon_url=self.bot.user.avatar_url)
+        embed = discord.Embed(colour=colour,description=":) JdavisBot!")
+        embed.set_author(name="FoxBot", url="https://wwww.github.com/JdavisBro/JdavisBot", icon_url=self.bot.user.avatar_url)
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name="Instance Owner:", value=appinfo.owner, inline=True)
         embed.add_field(name="Python Version:", value="[{}](https://www.python.org)".format(platform.python_version()), inline=True)

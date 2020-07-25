@@ -3,7 +3,9 @@ from discord.ext import commands
 import sys, traceback, logging
 import time, os, json
 
-logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO) 
+version = "0.0.0"
+
+logging.basicConfig(format='[%(asctime)s] %(levelname)s - Bot: %(message)s', level=logging.INFO) 
 
 try:
     TOKEN = sys.argv[1]
@@ -37,7 +39,7 @@ def prefix(bot, message):
         prefixes = [f"{guildprefix} ",guildprefix]
         return commands.when_mentioned_or(*prefixes)(bot,message)
     
-bot = commands.Bot(command_prefix=prefix, description='Bark Bark.', activity=discord.Game("Starting Up!"),case_insensitive=True)
+bot = commands.Bot(command_prefix=prefix, description=f'JdavisBot Version: {version}.', activity=discord.Game("Starting Up!"),case_insensitive=True)
 bot.default_prefix = default_prefix
 bot.startTime = time.time()
 bot.currently_loaded_cogs = []
