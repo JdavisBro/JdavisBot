@@ -148,7 +148,7 @@ class owner(commands.Cog):
         colour = discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255))
         appinfo = await self.bot.application_info()
         embed = discord.Embed(colour=colour,description=":) JdavisBot!")
-        embed.set_author(name="FoxBot", url="https://wwww.github.com/JdavisBro/JdavisBot", icon_url=self.bot.user.avatar_url)
+        embed.set_author(name="JdavisBot", url="https://wwww.github.com/JdavisBro/JdavisBot", icon_url=self.bot.user.avatar_url)
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name="Instance Owner:", value=appinfo.owner, inline=True)
         embed.add_field(name="Python Version:", value="[{}](https://www.python.org)".format(platform.python_version()), inline=True)
