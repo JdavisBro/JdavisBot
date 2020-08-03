@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import random,json
 import logging,re,asyncio
+import sqlite3
 
 def setup(bot):
     bot.add_cog(mod(bot))
@@ -21,50 +22,51 @@ try:
     logging.info("persists.json created.")
 except:
     logging.info("persists.json found.")
-        
-async def adduserpersist(self,ctx,user,role):
-    guildid = str(ctx.guild.id)
-    userid = str(user.id)
-    roleid = str(role.id)
-    with open("cogs/mod/persists.json") as f:
-        persists = json.load(f)
-        if guildid not in persists:
-            persists[guildid] = {}
-            with open("cogs/mod/persists.json","w") as fw:
-                json.dump(persists,fw)
-        if userid not in persists[guildid]:
-            persists[guildid][userid] = []
-        if roleid in persists[guildid][userid]:
-            return f"{user} already has {role} on their persist list!"
-        persists[guildid][userid].append(roleid)
-        with open("cogs/mod/persists.json","w") as fw:
-            json.dump(persists,fw)
-        return f"{user} will now be given {role} when they rejoin (until you remove it from them with `{prefix(self,ctx.message)}role remove '{role.name}' '{user.name}''`)"
-
-async def deluserpersist(self,ctx,user,role):
-    guildid = str(ctx.guild.id)
-    userid = str(user.id)
-    roleid = str(role.id)
-    with open("cogs/mod/persists.json") as f:
-        persists = json.load(f)
-        persists[guildid][userid].remove(roleid)
-        with open("cogs/mod/persists.json","w") as fw:
-            json.dump(persists,fw)
-        return f"{user} will no longer be given {role} when they rejoin."
-
-
-def prefix(self, message):
-    with open("settings/prefixes.json","r") as f:
-        prefixes = json.load(f)
-        guildprefix = prefixes.get(str(message.guild.id), self.bot.default_prefix)
-        return guildprefix
-
 
 class mod(commands.Cog):
     """Mod cog!"""
 
     def __init__(self, bot):
         self.bot = bot
+        self.database = bot.database
+
+    async def adduserpersist(self,ctx,user,role):
+        guildid = str(ctx.guild.id)
+        userid = str(user.id)
+        roleid = str(role.id)
+        with open("cogs/mod/persists.json") as f:
+            persists = json.load(f)
+            if guildid not in persists:
+                persists[guildid] = {}
+                with open("cogs/mod/persists.json","w") as fw:
+                    json.dump(persists,fw)
+            if userid not in persists[guildid]:
+                persists[guildid][userid] = []
+            if roleid in persists[guildid][userid]:
+                return f"{user} already has {role} on their persist list!"
+            persists[guildid][userid].append(roleid)
+            with open("cogs/mod/persists.json","w") as fw:
+                json.dump(persists,fw)
+            return f"{user} will now be given {role} when they rejoin (until you remove it from them with `{self.prefix(ctx.message)}role remove '{role.name}' '{user.name}''`)"
+
+    async def deluserpersist(self,ctx,user,role):
+        guildid = str(ctx.guild.id)
+        userid = str(user.id)
+        roleid = str(role.id)
+        with open("cogs/mod/persists.json") as f:
+            persists = json.load(f)
+            persists[guildid][userid].remove(roleid)
+            with open("cogs/mod/persists.json","w") as fw:
+                json.dump(persists,fw)
+            return f"{user} will no longer be given {role} when they rejoin."
+
+
+    async def prefix(self, message):
+        c = self.database.cursor()
+        c.execute("select * from prefixes where guild=?", (message.guild.id,))
+        prefix = c.fetchone()
+        prefix = prefix[1] if prefix else self.bot.default_prefix
+        return prefix
 
     def getmodsetting(self,guildid,setting):
         guildid = str(guildid)
@@ -128,23 +130,21 @@ class mod(commands.Cog):
         
     @modset.command(name="prefix")
     async def setprefix(self,ctx,prefix="-"):
-        guildid = str(ctx.guild.id)
-        with open("settings/prefixes.json","r+") as f:
-            prefixes = json.load(f)
-        if guildid not in prefixes:
-            with open("settings/prefixes.json","r+") as f:
-                prefixes[guildid] = self.bot.default_prefix
-                json.dump(prefixes,f)
-        if prefix == prefixes[guildid]:
+        if prefix == await self.prefix(ctx.message):
             await ctx.send("That's already the prefix!")
             return
         if len(prefix) > 14:
             await ctx.send("That's too long! It must be under 15 characters.")
             return
-        with open("settings/prefixes.json","w+") as f:
-            prefixes[guildid] = prefix
-            json.dump(prefixes,f)
-            await ctx.send(f"Prefix has been set to ``{prefix}``!")
+        c = self.database.cursor()
+        c.execute("select * from prefixes where guild=?", (ctx.guild.id,))
+        prefixCheck = c.fetchone()
+        if prefixCheck:
+            c.execute("UPDATE prefixes SET prefix= :prefix WHERE guild= :guild",{"prefix": prefix,"guild": ctx.guild.id})
+        else:
+            c.execute("INSERT INTO prefixes VALUES (?,?)",(ctx.guild.id,prefix))
+        self.database.commit()
+        await ctx.send(f"Prefix has been set to ``{prefix}``!")
 
     @modset.command(name="invitecensoring",aliases=["invites"])
     async def modset_invitecensoring(self,ctx,enabled:bool=True):
