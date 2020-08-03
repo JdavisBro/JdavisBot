@@ -2,7 +2,7 @@ import discord, asyncio
 from discord.ext import commands
 import random
 import platform,os
-import time, datetime, json, logging
+import time, datetime, logging
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
 
@@ -15,6 +15,7 @@ class owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.previousReload = None
+        self.database = bot.database
 
     @commands.command()
     @commands.is_owner()
@@ -50,40 +51,47 @@ class owner(commands.Cog):
             await ctx.send("Timed Out. Not loading.")
         else:
             if msg.content == "yes":
+                newloaded = []
                 for cog in cogs:
+                    if cog in self.bot.currently_loaded_cogs:
+                        await ctx.send(f"{cog} already loaded.")
+                        continue
                     try:
                         self.bot.load_extension("cogs.{0}.{0}".format(cog))
                     except:
-                        await ctx.send("Failed.")
+                        await ctx.send(f"Failed to load {cog}")
                         raise
                     else:
-                        with open("settings/cogs.json","r+") as f:
-                            extensions = json.load(f)
-                        extensions.append("cogs.{0}.{0}".format(cog))
-                        with open("settings/cogs.json","w+") as f:
-                            json.dump(extensions,f)
-                        await ctx.send("Cog {} loaded.".format(cog))
                         self.bot.currently_loaded_cogs.append(cog)
+                        newloaded.append((f"cogs.{cog}.{cog}",))
+                        await ctx.send(f"Loaded {cog}")
+                c = self.database.cursor()
+                c.executemany("INSERT OR IGNORE INTO cogs VALUES (?)",newloaded)
+                self.database.commit()
+                await ctx.send(f"Done.")
 
     @cog.command(aliases = ['u'])
     async def unload(self,ctx,*cogs):
         """Unloads a cog."""
+        newunloaded = []
         for cog in cogs:
             if cog == 'owner':
-                await ctx.send("Bruh, unloading owner would make you unable to load cogs, so that's a no.")
-                return
+                await ctx.send("Not unloading owner.")
+                continue
             try:
                 self.bot.unload_extension("cogs.{0}.{0}".format(cog))
             except:
-                await ctx.send("Cog not loaded but removing it.")
-                pass
-            with open("settings/cogs.json","r+") as f:
-                extensions = json.load(f)
-            extensions.remove("cogs.{0}.{0}".format(cog))
-            with open("settings/cogs.json","w+") as f:
-                json.dump(extensions,f)
-            await ctx.send("Cog {} unloaded.".format(cog))
-            self.bot.currently_loaded_cogs.remove(cog)
+                await ctx.send(f"Failed to unload {cog}")
+                raise
+            else:
+                if cog in self.bot.currently_loaded_cogs:
+                    self.bot.currently_loaded_cogs.remove(cog)
+                    newunloaded.append((f"cogs.{cog}.{cog}",))
+                await ctx.send(f"Unloaded {cog}")
+        c = self.database.cursor()
+        c.executemany("DELETE FROM cogs WHERE cog=?",newunloaded)
+        self.database.commit()
+        await ctx.send(f"Done.")
 
     @cog.command(aliases = ['r'])
     async def reload(self,ctx,cog=None):

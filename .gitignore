@@ -3,3 +3,4 @@
 *.json
 .vscode/
 cogs/custom/commands.json
+database.db
