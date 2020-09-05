@@ -59,7 +59,7 @@ class minecraftServer(commands.Cog):
         name = ("*" if not name.startswith("*") else "")+name.replace(" ","_")
         whitelist = json.load(open("/home/jdavisbro221/minecraft/whitelist.json"))
         whitelist.append({"uuid":uuid,"name":name})
-        with open("/home/jdavisbro221/minecraft/whitelist.json","w") as f:
+        with open("/home/jdaviscoolguy2/minecraft/whitelist.json","w") as f:
             json.dump(whitelist,f)
         await self.minecraftRun("whitelist reload")
         await ctx.send(f"{name} with uuid {uuid} added to whitelist!")
