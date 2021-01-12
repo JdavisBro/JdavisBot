@@ -2,32 +2,25 @@ import discord
 from discord.ext import commands
 import logging, json
 
+import storage
+
 def setup(bot):
     bot.add_cog(permissions(bot))
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO) 
 
-try:
-    open("cogs/permissions/permissions.json","x")
-    json.dump({"commands":{},"ignore":[]},open("cogs/permissions/permissions.json","w"))
-    logging.info("permissions.json created.")
-except:
-    logging.info("permissions.json found.")
+if storage.create('permissions',{"commands":{},"ignore":[]},path="cogs/permissions/")[0]:
+    logging.info("cogs/permissions/permissions.json created.")
 
 def getPermissionsAndCheckForGuildAndCommand(ctx,command): # what the fuck
-    with open("cogs/permissions/permissions.json","r") as f:
-        permissions = json.load(f)
-        if str(ctx.guild.id) not in permissions["commands"]:
-            permissions[str(ctx.guild.id)] = {}
-        if command not in permissions["commands"][str(ctx.guild.id)]:
-            permissions[str(ctx.guild.id)][command] = {"*": ["*"]}
-            with open("cogs/permissions/permissions.json","w") as fw:
-                json.dump(permissions,fw)
-        return permissions
+    perms = storage.read("permissions",path="cogs/permissions/",key=[str(ctx.guild.id)])
+    if command not in permissions["commands"]:
+        permissions["commands"][command] = {"*": ["*"]}
+        storage.write("permissions",permissions,path="cogs/permissions/",key=)
+    return permissions
 
 def getPermissions():
-    with open("cogs/permissions/permissions.json","r") as f:
-        return json.load(f)
+    return storage.read("permissions",path="cogs/permissions/")
 
 class permissions(commands.Cog):
     """Permissions cog!"""
