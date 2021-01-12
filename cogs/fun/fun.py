@@ -121,3 +121,8 @@ class fun(commands.Cog):
         embed = discord.Embed(colour=discord.Colour.from_rgb(random.randint(1,255),random.randint(1,255),random.randint(1,255)),title=f"Random {animal.replace('_',' ')} image:",url=image).set_image(url=image)
         embed.set_footer(text="some-random-api.ml")
         await ctx.send(embed=embed)
+
+        @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.type == discord.MessageType.new_member:
+            await message.add_reaction("🎉")

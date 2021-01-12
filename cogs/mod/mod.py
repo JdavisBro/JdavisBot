@@ -370,8 +370,6 @@ class mod(commands.Cog):
                                 embed.add_field(name="User:", value=str(message.author),inline=False)
                                 embed.add_field(name="Message:", value=message.content, inline=False)
                                 await self.bot.get_channel(self.getmodsetting(message.guild.id,"logchannel")).send(embed=embed)
-            if message.type == discord.MessageType.new_member:
-                await message.add_reaction("🎉")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
