@@ -18,21 +18,25 @@ class fun(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @grp_fun.command(name="coolness",aliases=["cool"])
-    async def grp_fun_coolness(self,ctx,*,user:discord.Member=None):
-        if not user:
-            user = ctx.author
-        if user != ctx.guild.me:
-            random.seed(user.id)
-            if user.bot:
-                if random.random() != 0:
-                    await ctx.send(f"{user.display_name} is {round(random.random()*100/2,2)}% cool! (half as cool as usual because they're a bot)")
+    async def grp_fun_coolness(self,ctx,*users:discord.Member):
+        if not users:
+            users = [ctx.author]
+        outputs = {}
+        for user in users:
+            if user != ctx.guild.me:
+                random.seed(user.id)
+                value = random.random()
+                if user.bot:
+                    if value != 0:
+                        outputs[round(value*10000/2)] = f"{user.display_name} is {round(value*100/2,2)}% cool! (half as cool as usual because they're a bot)"
+                    else:
+                        outputs[round(value*10000/2)] = f"{user.display_name} is {round(value*100,2)}% cool! (half as cool as usual because they are a bot)"
                 else:
-                    await ctx.send(f"{user.display_name} is {round(random.random()*100,2)}% cool! (half as cool as usual because they are a bot)")
+                    outputs[round(value*10000/2)] = f"{user.display_name} is {round(value*100,2)}% cool!"
+                random.seed()
             else:
-                await ctx.send(f"{user.display_name} is {round(random.random()*100,2)}% cool!")
-            random.seed()
-        else:
-            await ctx.send("I am 100% cool")
+                outputs[10000000] = ("I am 100% cool")
+        await ctx.send("\n".join([outputs[value] for value in sorted(outputs,reverse=True)]))
 
     @grp_fun.command(name="worm",aliases=["wormonastring","woas","string"])
     async def grp_fun_worm(self,ctx,*,user:discord.Member=None):

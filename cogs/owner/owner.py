@@ -51,7 +51,7 @@ class owner(commands.Cog):
         """Loads a cog."""
         for cog in cogs:
             try:
-                self.bot.load_extension("cogs.{0}.{0}".format(cog))
+                self.bot.load_extension(f"cogs.{cog}.{cog}")
             except:
                 await ctx.send("Failed.")
                 raise

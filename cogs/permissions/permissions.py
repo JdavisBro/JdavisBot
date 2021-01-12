@@ -9,17 +9,17 @@ logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=log
 
 try:
     open("cogs/permissions/permissions.json","x")
-    json.dump(dict(),open("cogs/permissions/permissions.json","w"))
+    json.dump({"commands":{},"ignore":[]},open("cogs/permissions/permissions.json","w"))
     logging.info("permissions.json created.")
 except:
     logging.info("permissions.json found.")
 
-def getPermissionsAndCheckForGuildAndCommand(ctx,command):
+def getPermissionsAndCheckForGuildAndCommand(ctx,command): # what the fuck
     with open("cogs/permissions/permissions.json","r") as f:
         permissions = json.load(f)
-        if str(ctx.guild.id) not in permissions:
+        if str(ctx.guild.id) not in permissions["commands"]:
             permissions[str(ctx.guild.id)] = {}
-        if command not in permissions[str(ctx.guild.id)]:
+        if command not in permissions["commands"][str(ctx.guild.id)]:
             permissions[str(ctx.guild.id)][command] = {"*": ["*"]}
             with open("cogs/permissions/permissions.json","w") as fw:
                 json.dump(permissions,fw)
@@ -60,14 +60,14 @@ class permissions(commands.Cog):
         else:
             channel = await commands.TextChannelConverter().convert(ctx,channel)
             channelid = str(channel.id)
-        if roleid not in permissions[guildid][command]:
-            permissions[guildid][command][roleid] = []
-        if "*" in permissions[guildid][command][roleid]:
-            permissions[guildid][command][roleid].remove("*")
-        if channelid in permissions[guildid][command][roleid]:
+        if roleid not in permissions["commands"][guildid][command]:
+            permissions["commands"][guildid][command][roleid] = []
+        if "*" in permissions["commands"][guildid][command][roleid]:
+            permissions["commands"][guildid][command][roleid].remove("*")
+        if channelid in permissions["commands"][guildid][command][roleid]:
             await ctx.send(f"{channel} is already in {role}'s {command} permissions.")
             return
-        permissions[guildid][command][roleid].append(channelid)
+        permissions["commands"][guildid][command][roleid].append(channelid)
         with open("cogs/permissions/permissions.json","w") as f:
             f.write(json.dumps(permissions))
         await ctx.send(f"{role} now has permission to use {command} in {channel}.")
@@ -85,7 +85,7 @@ class permissions(commands.Cog):
             role = await commands.RoleConverter().convert(ctx,role)
             roleid = str(role.id)
         if channel == "*":
-            permissions[guildid][command].pop(roleid,None)
+            permissions["commands"][guildid][command].pop(roleid,None)
             with open("cogs/permissions/permissions.json","w") as f:
                 print("\n\n IMPORTANT" + json.dumps(permissions) + "\n\n IMPORTANT")
                 f.write(json.dumps(permissions))
@@ -94,7 +94,7 @@ class permissions(commands.Cog):
         else:
             channel = await commands.TextChannelConverter().convert(ctx,channel)
             channelid = str(channel.id)
-        permissions[guildid][command][roleid].remove(channelid)
+        permissions["commands"][guildid][command][roleid].remove(channelid)
         with open("cogs/permissions/permissions.json","w") as f:
             print("\n\n IMPORTANT" + json.dumps(permissions) + "\n\n IMPORTANT")
             f.write(json.dumps(permissions))
@@ -109,17 +109,17 @@ class permissions(commands.Cog):
     async def cmd_permissions_list_commands(self,ctx):
         guildid = str(ctx.guild.id)
         permissions = getPermissions()
-        commands = list(permissions[guildid].keys())
+        commands = list(permissions["commands"][guildid].keys())
         await ctx.send(" - ".join(commands))
 
     @cmd_permissions_list.command(name="roles")
     async def cmd_permissions_list_roles(self,ctx,command):
         guildid = str(ctx.guild.id)
         permissions = getPermissions()
-        roles  = [(ctx.guild.get_role(int(roleid)) if not roleid == "*" else "*") for roleid in permissions[guildid][command]]
+        roles  = [(ctx.guild.get_role(int(roleid)) if not roleid == "*" else "*") for roleid in permissions["commands"][guildid][command]]
         rolenames = [(role.name if not role == "*" else "*") for role in roles]
         roleids = [(str(role.id) if not role == "*" else "*") for role in roles]
-        channelLists = [permissions[guildid][command][roleid] for roleid in roleids]
+        channelLists = [permissions["commands"][guildid][command][roleid] for roleid in roleids]
         channels = []
         for channelList in channelLists:
             currentChannelList = ""
@@ -136,6 +136,22 @@ class permissions(commands.Cog):
         embed.add_field(name="Channels:", value="\n".join(channels), inline=True)
         await ctx.send(embed=embed)
 
+    @cmd_permissions.command(name="ignore")
+    async def cmd_permissions_ignore(self,ctx,channel: discord.TextChannel=None):
+        if not channel:
+            channel = ctx.channel
+        channelid = str(channel.id)
+        permissions = getPermissions()
+        if channelid in permissions["ignore"]:
+            permissions["ignore"].remove(channelid)
+            await ctx.send(f"{channel.mention} is no longer ignored.")
+        else:
+            permissions["ignore"].append(channelid)
+            await ctx.send(f"{channel.mention} is now ignored.")
+        with open("cogs/permissions/permissions.json","w") as f:
+            json.dump(permissions,f)
+
+
     async def bot_check_once(self,ctx):
         if isinstance(ctx.channel,discord.DMChannel):
             return True
@@ -143,17 +159,24 @@ class permissions(commands.Cog):
         command = ctx.command.name
         roles = [str(role.id) for role in list(ctx.author.roles)[0:]]
         channelid = str(ctx.channel.id)
-        permissions = getPermissions()
-        if guildid in permissions:
-            if command in permissions[guildid]:
-                if "*" in permissions[guildid][command]:
-                    if "*" not in permissions[guildid][command]["*"] and channelid not in permissions[guildid][command]["*"]:
+        try:
+            permissions = getPermissions()
+        except:
+            await ctx.send("Permissions check failed.")
+            return True
+        if channelid in permissions["ignore"] and not ctx.command.qualified_name == "permissions ignore":
+            await ctx.message.add_reaction("❎")
+            return False
+        if guildid in permissions["commands"]:
+            if command in permissions["commands"][guildid]:
+                if "*" in permissions["commands"][guildid][command]:
+                    if "*" not in permissions["commands"][guildid][command]["*"] and channelid not in permissions["commands"][guildid][command]["*"]:
                         await ctx.message.add_reaction("❎")
                         return False
                 else:
                     for role in roles:
-                        if role in permissions[guildid][command]:
-                            if "*" not in permissions[guildid][command][role] and channelid not in permissions[guildid][command][role]:
+                        if role in permissions["commands"][guildid][command]:
+                            if "*" not in permissions["commands"][guildid][command][role] and channelid not in permissions["commands"][guildid][command][role]:
                                 await ctx.message.add_reaction("❎")
                                 return False
                             else:
