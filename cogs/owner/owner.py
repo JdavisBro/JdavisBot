@@ -172,3 +172,44 @@ class owner(commands.Cog):
     @commands.is_owner()
     async def exec(self,ctx,*,executeThis):
         logging.info(f"Result: {exec(executeThis)}")
+
+    @commands.command(aliases=["guilds"])
+    @commands.is_owner()
+    async def servers(self,ctx): # there's probably a better way of doing this if you know it contact me here: https://jdavisbro.github.io/apf?/contact-me
+        guilds = self.bot.guilds
+        guildDict = {}
+        out = "Guilds I'm in:\n"
+        number = 1
+        for guild in guilds:
+            out += f"{number} - {guild.name}\n"
+            guildDict[number] = guild
+            number += 1
+        out += "Type the number to make me leave the server (expires after 30 seconds with 🥛 reaction)."
+        def check(m):
+            return m.channel == ctx.channel and m.author == ctx.author
+        message = await ctx.send(out)
+        loop = True
+        while loop:
+            try:
+                msg = await self.bot.wait_for('message',check=check,timeout=30)
+            except asyncio.TimeoutError:
+                await message.add_reaction("🥛")
+                return
+            try:
+                if int(msg.content) in guildDict.keys():
+                    loop = False
+            except:
+                pass
+        guild = guildDict[int(msg.content)]
+        await ctx.send(f"Are you sure you want me to leave {guild.name}? Say `yes` to continue or wait 15 seconds for timeout.")
+        def checkTwo(m):
+            return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
+        try:
+            msg = await self.bot.wait_for('message',check=checkTwo,timeout=15)
+        except asyncio.TimeoutError:
+            await ctx.send("Timed Out. Not leaving.")
+            return
+        else:
+            if msg.content == "yes":
+                await guild.leave()
+                await ctx.send(f"Left {guild.name}.")
