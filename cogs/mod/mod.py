@@ -59,7 +59,7 @@ class mod(commands.Cog):
 
     def getmodsetting(self,guildid,setting):
         guildid = str(guildid)
-        settings = storage.read("mod",key=[guildid])
+        settings = storage.read("mod",key=[guildid],default={})
         if setting not in settings:
             return None
         else:
@@ -85,12 +85,14 @@ class mod(commands.Cog):
     async def logchannel(self,ctx,channel: discord.TextChannel=None):
         guildid = str(ctx.guild.id)
         setting = self.getmodsetting(guildid,'logchannel')
+        if not channel:
+            channel = ctx.channel
         try:
             logchannel = self.bot.get_channel(int(setting))
         except:
             logchannel = None
         if logchannel == channel:
-            await ctx.send("The log channel is already that channel!")
+            await ctx.send(f"The log channel is already {channel.mention}!")
             return
         if not channel.permissions_for(ctx.guild.me).read_messages or not channel.permissions_for(ctx.guild.me).send_messages:
             await ctx.send("I can't read and/or send messages in that channel.")
