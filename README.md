@@ -1,3 +1,2 @@
-# FOXBOT
-
-Riddle of the day: what's 9+10
+# JdavisBot
+I might try to make this function as an actual moderation bot.

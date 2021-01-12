@@ -1,16 +1,16 @@
-import discord, asyncio, logging
+import asyncio
+import logging
+
+import discord
 from discord.ext import commands
-import json
+
+import storage
 
 def setup(bot):
     bot.add_cog(custom(bot))
 
-try:
-    open("cogs/custom/commands.json","x")
-    open("cogs/custom/commands.json","w").write("{}")
-    logging.info("commands.json created.")
-except:
-    logging.info("commands.json found.")
+if storage.create('commands',{},path="cogs/custom/")[0]:
+    logging.info("cogs/custom/commands.json created.")
 
 class custom(commands.Cog):
     """Cog to add custom commands for servers!"""
@@ -24,6 +24,11 @@ class custom(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send_help(ctx.command)
 
+    async def checkGuildDict(self,guildid):
+        if not storage.read("commands",path="cogs/custom/",key=[guildid]):
+            storage.write("commands",{},path="cogs/custom/",key=guildid)
+        return storage.read("commands",path="cogs/custom/",key=[guildid])
+
     @custom.command(name='add',aliases = ['new','make','a'])
     @commands.has_permissions(manage_guild=True)
     async def cc_add(self,ctx,name,*,content):
@@ -34,12 +39,7 @@ class custom(commands.Cog):
         you can also add arguments that the user fills in with $A"""
         guildid = str(ctx.guild.id)
         name = name.lower()
-        with open("cogs/custom/commands.json", "r+") as f:
-            commandServerDict = json.load(f)
-        if guildid not in commandServerDict:
-            commandServerDict[guildid] = dict()
-            with open("cogs/custom/commands.json", "w+") as f:
-                json.dump(commandServerDict,f)
+        commands = await self.checkGuildDict(guildid)
         actualcommands = [command.name for command in self.bot.commands]
         for aliases in [command.aliases for command in self.bot.commands]:
             if aliases:
@@ -48,8 +48,8 @@ class custom(commands.Cog):
         if name in actualcommands:
             await ctx.send("There is already an actual command named that.")
             return
-        if name in commandServerDict[guildid]:
-            await ctx.send("Warning: There is already a command named '{}' in this server continuing would overwrite it.\nIf you want to continue say `yes`.".format(name))
+        if name in commands:
+            await ctx.send(f"Warning: There is already a command named `{name}` in this server continuing would overwrite it.\nIf you want to continue say `yes`.")
             def check(m):
                 return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
             try:
@@ -60,48 +60,34 @@ class custom(commands.Cog):
             else:
                 if msg.content == "yes":
                     await ctx.send("Overwriting.")
-        commandServerDict[guildid][name] = content
-        with open("cogs/custom/commands.json","w+") as f:
-            json.dump(commandServerDict,f)
-        await ctx.send("Command {} added!".format(name))
+        commands[name] = content
+        storage.write("commands",commands,path="cogs/custom/",key=guildid)
+        await ctx.send(f"Command {name} added!")
 
     @custom.command(name="del", aliases = ['delete','remove','d'])
     @commands.has_permissions(manage_guild=True)
     async def cc_del(self,ctx,name):
         """Deltes a custom command for this server, requires manage server permission."""
         guildid = str(ctx.guild.id)
-        with open("cogs/custom/commands.json", "r+") as f:
-                commandServerDict = json.load(f)
-        if guildid not in commandServerDict:
-            commandServerDict[guildid] = dict()
-            with open("cogs/custom/commands.json", "w+") as f:
-                json.dump(commandServerDict,f)
-            await ctx.send("{} wasn't found.".format(name))
-            return
-        if commandServerDict[guildid].pop(name,None) is None:
+        commands = await self.checkGuildDict(guildid)
+        if commands.pop(name,None) is None:
             await ctx.send("{} wasn't found.".format(name))
             return
         else:
-            with open("cogs/custom/commands.json", "w+") as f:
-                json.dump(commandServerDict,f)
+            storage.write("commands",commands,path="cogs/custom/",key=guildid)
             await ctx.send("Command {} deleted!".format(name))
         
     @custom.command(name = 'list',aliases = ['get','view','l','ls'])
     async def cc_list(self,ctx):
         """Lists custom commands for this server."""
         guildid = str(ctx.guild.id)
-        with open("cogs/custom/commands.json", "r+") as f:
-            commandServerDict = json.load(f)
-        if guildid not in commandServerDict:
-            commandServerDict[guildid] = dict()
-            with open("cogs/custom/commands.json", "w+") as f:
-                json.dump(commandServerDict,f)
-        if not commandServerDict[guildid]:
+        commands = await self.checkGuildDict(guildid)
+        if not commands:
             await ctx.send("There are no commands in this server.")
             return
         text = f'Custom Commands for "{ctx.guild.name}":\n'
-        for key in commandServerDict[guildid]:
-            text += f'{str(key)}: {commandServerDict[guildid][key]}\n'
+        for key in commands:
+            text += f'{str(key)}: {commands[key]}\n'
         for line in [text[i:i + 1990] for i in range(0, len(text), 1994)]:
             await ctx.send(f"```YML\n{line}```")
             await asyncio.sleep(1)
@@ -113,32 +99,32 @@ class custom(commands.Cog):
         if message.author.bot:
             return
         guildid = str(message.guild.id)
-        with open("settings/prefixes.json") as f:
-            prefixes = json.load(f)
-            prefix = prefixes.get(str(message.guild.id), self.bot.default_prefix)
-        if message.content.startswith(prefix):
-            with open("cogs/custom/commands.json", "r+") as f:
-                commandServerDict = json.load(f)
-            if guildid not in commandServerDict:
-                commandServerDict[guildid] = dict()
-                with open("cogs/custom/commands.json", "w+") as f:
-                    json.dump(commandServerDict,f)
-                return
-            text = message.content[len(prefix)::]
-            strnumber = 0
-            cmd = ''
-            args = ''
-            text = text.split()
-            for word in text:
-                if strnumber == 0:
-                    strnumber = 1
-                    cmd = word.lower()
-                else:
-                    args += word + " "
-            args = args[0:len(args)-1]
-            if cmd not in commandServerDict[guildid]:
-                return
-            text = commandServerDict[guildid][cmd]
-            text = text.replace("$A",args)
-            await message.channel.send(text.format(message))
-            
+        guildprefix = storage.read("prefixes",key=[str(message.guild.id)],default=self.bot.default_prefix)
+        prefixes = [f"{guildprefix} ",guildprefix]        
+        commands = await self.checkGuildDict(guildid)
+        if not commands:
+            return
+        prefix = None
+        for aPrefix in prefixes:
+            if message.content.startswith(aPrefix):
+                prefix = aPrefix
+        if not prefix:
+            return
+        text = message.content[len(prefix)::]
+        strnumber = 0
+        cmd = ''
+        args = ''
+        text = text.split()
+        for word in text:
+            if strnumber == 0:
+                strnumber = 1
+                cmd = word.lower()
+            else:
+                args += word + " "
+        args = args[0:len(args)-1]
+        if cmd not in commands:
+            return
+        text = commands[cmd]
+        text = text.replace("$A",args)
+        await message.channel.send(text.format(message))
+        

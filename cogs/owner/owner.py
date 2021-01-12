@@ -1,8 +1,16 @@
-import discord, asyncio
-from discord.ext import commands
+import asyncio
+import datetime
+import json
+import logging
+import os
+import platform
 import random
-import platform,os
-import time, datetime, json, logging
+import time
+
+import discord
+from discord.ext import commands
+
+import storage
 
 logging.basicConfig(format='[%(asctime)s] %(levelname)s: %(message)s', level=logging.INFO)        
 
@@ -41,47 +49,34 @@ class owner(commands.Cog):
     @cog.command(aliases = ['l'])
     async def load(self,ctx,*cogs):
         """Loads a cog."""
-        await ctx.send("Are You Sure?!?\nIf you want to continue say `yes`.")
-        def check(m):
-            return m.content == 'yes' and m.channel == ctx.channel and m.author == ctx.author
-        try:
-            msg = await self.bot.wait_for('message',check=check,timeout=15)
-        except asyncio.TimeoutError:
-            await ctx.send("Timed Out. Not loading.")
-        else:
-            if msg.content == "yes":
-                for cog in cogs:
-                    try:
-                        self.bot.load_extension("cogs.{0}.{0}".format(cog))
-                    except:
-                        await ctx.send("Failed.")
-                        raise
-                    else:
-                        with open("settings/cogs.json","r+") as f:
-                            extensions = json.load(f)
-                        extensions.append("cogs.{0}.{0}".format(cog))
-                        with open("settings/cogs.json","w+") as f:
-                            json.dump(extensions,f)
-                        await ctx.send("Cog {} loaded.".format(cog))
-                        self.bot.currently_loaded_cogs.append(cog)
+        for cog in cogs:
+            try:
+                self.bot.load_extension("cogs.{0}.{0}".format(cog))
+            except:
+                await ctx.send("Failed.")
+                raise
+            else:
+                extensions = storage.read("cogs")
+                extensions.append("cogs.{0}.{0}".format(cog))
+                storage.write("cogs",extensions)
+                await ctx.send(f"Cog {cog} loaded.")
+                self.bot.currently_loaded_cogs.append(cog)
 
     @cog.command(aliases = ['u'])
     async def unload(self,ctx,*cogs):
         """Unloads a cog."""
         for cog in cogs:
             if cog == 'owner':
-                await ctx.send("Bruh, unloading owner would make you unable to load cogs, so that's a no.")
+                await ctx.send("Cannot unload owner.")
                 return
             try:
                 self.bot.unload_extension("cogs.{0}.{0}".format(cog))
             except:
                 await ctx.send("Cog not loaded but removing it.")
                 pass
-            with open("settings/cogs.json","r+") as f:
-                extensions = json.load(f)
+            extensions = storage.read("cogs")
             extensions.remove("cogs.{0}.{0}".format(cog))
-            with open("settings/cogs.json","w+") as f:
-                json.dump(extensions,f)
+            storage.write("cogs",extensions)
             await ctx.send("Cog {} unloaded.".format(cog))
             self.bot.currently_loaded_cogs.remove(cog)
 
@@ -100,7 +95,7 @@ class owner(commands.Cog):
             raise
         else:
             await ctx.send("Cog {} reloaded.".format(cog))
-            exec(f"self.bot.previousReload = cog")
+            self.bot.previousReload = cog
 
     @cog.command(name="list",aliases=["ls"])
     async def cogs_list(self,ctx):
@@ -150,7 +145,10 @@ class owner(commands.Cog):
         embed = discord.Embed(colour=colour,description=":) JdavisBot!")
         embed.set_author(name="JdavisBot", url="https://wwww.github.com/JdavisBro/JdavisBot", icon_url=self.bot.user.avatar_url)
         embed.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.add_field(name="_ _", value="_ _", inline=True)
         embed.add_field(name="Instance Owner:", value=appinfo.owner, inline=True)
+        embed.add_field(name="_ _", value="_ _", inline=True)
+        embed.add_field(name="Bot Version:", value="[{}](https://wwww.github.com/JdavisBro/JdavisBot)".format(self.bot.version), inline=True)
         embed.add_field(name="Python Version:", value="[{}](https://www.python.org)".format(platform.python_version()), inline=True)
         embed.add_field(name="Discord.py Version:", value="[{}](https://github.com/Rapptz/discord.py)".format(discord.__version__), inline=True)
         await ctx.send(embed=embed)
