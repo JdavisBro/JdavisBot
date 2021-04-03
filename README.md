@@ -1,2 +1,2 @@
 # JdavisBot
-I might try to make this function as an actual moderation bot.
+not in progress, check [SushiInYourFace/YayaBot](https://github.com/SushiInYourFace/YayaBot)
